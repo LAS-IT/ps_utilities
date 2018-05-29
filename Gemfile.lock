@@ -2,6 +2,7 @@ PATH
   remote: .
   specs:
     ps_utilities (0.1.0)
+      httparty
 
 GEM
   remote: https://rubygems.org/
@@ -30,7 +31,6 @@ PLATFORMS
 
 DEPENDENCIES
   bundler (~> 1.16)
-  httparty
   ps_utilities!
   rake (~> 10.5)
   rspec (~> 3.7)
