@@ -40,7 +40,6 @@ module PsUtilities
     def authenticate
       @credentials[:access_token] = get_token()
       @options[:headers].merge!('Authorization' => 'Bearer ' + @credentials[:access_token])
-      pp credentials
       raise AuthenticationError.new("Could not authenticate") unless @credentials[:access_token]
       @authenticated = true
     end
