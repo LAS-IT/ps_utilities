@@ -42,7 +42,8 @@ RSpec.describe PsUtilities::Connection do
     xit "access_token" do
       stub_const('ENV', ENV.to_hash.merge('PS_ACCESS_TOKEN' => 'access_token'))
       ps = PsUtilities::Connection.new
-      expect(ps.credentials[:access_token]).to eq(ENV['PS_ACCESS_TOKEN'])
+      expect(ps.credentials[:access_token]).to be nil
+      # expect(ps.credentials[:access_token]).to eq(ENV['PS_ACCESS_TOKEN'])
     end
   end
 
@@ -89,14 +90,42 @@ RSpec.describe PsUtilities::Connection do
       expect { PsUtilities::Connection.new }.to raise_error(ArgumentError, /missing client_secret/)
     end
   end
-end
 
-# @credentials=
-#   {:base_uri=>"https://las-test.powerschool.com",
-#    :auth_endpoint=>"/oauth/access_token",
-#    :client_id=>"99702fda-963e-4494-9276-94dfca726669",
-#    :client_secret=>"1c6ba14b-e19d-498c-b930-404932702c57",
-#    :access_token=>nil},
-#    @options={:headers=>{"User-Agent"=>"Ruby Powerschool",
-#      "Accept"=>"application/json",
-#      "Content-Type"=>"application/json"}}
+  context "token_valid? " do
+    it "detects a valid auth_token" do
+      ps_new = PsUtilities::Connection.new
+      credentials = {access_token: 'not-bad', token_expires: Time.now+100}
+      answer = ps_new.send(:token_valid?, credentials)
+      expect( answer ).to be true
+    end
+    it "detects a nil time token" do
+      ps_new = PsUtilities::Connection.new
+      credentials = {token_expires: nil, access_token: 'not-bad'}
+      answer = ps_new.send(:token_valid?, credentials)
+      expect( answer ).to be false
+    end
+    it "detects an expired token" do
+      ps_new = PsUtilities::Connection.new
+      credentials = {token_expires: Time.now-1000, access_token: 'not-bad'}
+      answer = ps_new.send(:token_valid?, credentials)
+      expect( answer ).to be false
+    end
+    it "detects an blank token" do
+      ps_new = PsUtilities::Connection.new
+      credentials = {access_token: '', token_expires: Time.now+1000}
+      answer = ps_new.send(:token_valid?, credentials)
+      expect( answer ).to be false
+    end
+    it "detects an nil token" do
+      ps_new = PsUtilities::Connection.new
+      credentials = {access_token: nil, token_expires: Time.now+1000}
+      answer = ps_new.send(:token_valid?, credentials)
+      expect( answer ).to be false
+    end
+  end
+
+  context "auth_headers"
+
+  context "encode_credentials"
+
+end

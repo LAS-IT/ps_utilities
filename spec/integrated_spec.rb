@@ -47,6 +47,16 @@ RSpec.describe "Actual Communication Tests" do
   end
 
   context "PowerSchool connection success" do
+    it "bad connection throws error" do
+      stub_const('ENV', ENV.to_hash.merge('PS_CLIENT_ID' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'))
+      stub_const('ENV', ENV.to_hash.merge('PS_CLIENT_SECRET' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'))
+      ps_bad = PsUtilities::Connection.new
+      # expect { ps_bad.run }.to raise_error(StandardError, /Mickey Mouse/)
+      expect { ps_bad.run }.to raise_error(AuthError, /No Auth Token Returned/)
+    end
+  end
+
+  context "PowerSchool api send / return success" do
 
     let!(:ps_auth) { PsUtilities::Connection.new.run }
 
