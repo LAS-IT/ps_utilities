@@ -12,57 +12,84 @@ module PsUtilities
   # @note You should use environment variables to initialize your server.
   class Connection
 
-    attr_reader :api_credentials, :authenticated, :options
+    attr_reader :credentials, :authenticated, :options
 
     include PsUtilities::UserActions
 
-    # BASE_URI = ENV['PS_URL'] || 'https://partner3.powerschool.com'
-    # AUTH_ENDPOINT = ENV['PS_AUTH_ENDPOINT']
+    def initialize(attributes: {}, options: {})
+      @credentials = attr_defaults.merge(attributes)
+      @options         =  opts_defaults.merge(options)
 
-    def initialize(credentials: {}, options: {})
-      @api_credentials = defaults.merge(credentials)
-      if ( @api_credentials[:client_secret].nil?  || @api_credentials[:client_id].nil?) &&
-         @api_credentials[:access_token].nil?
-          raise AuthenticationError, 'Access token or api credentials are required'
-      end
-      if ( @api_credentials[:client_secret].empty? || @api_credentials[:client_id].empty?) &&
-         @api_credentials[:access_token].empty?
-          raise AuthenticationError, 'Access token or api credentials are required'
-      end
-      @options =  {:headers => { 'User-Agent' => "Ruby Powerschool",
-                                'Accept' => 'application/json',
-                                'Content-Type' => 'application/json'
-                                }
-                  }.merge(options)
+      raise ArgumentError, "missing client_secret"  if @credentials[:client_secret].nil?  or
+                                                      @credentials[:client_secret].empty?
+      raise ArgumentError, "missing client_id"      if @credentials[:client_id].nil?  or
+                                                      @credentials[:client_id].empty?
+      raise ArgumentError, "missing base_uri"       if @credentials[:base_uri].nil?  or
+                                                      @credentials[:base_uri].empty?
     end
 
-    def authenticate(force = false)
-      @authenticated = false
-      if ! @api_credentials[:access_token]
-        ps_auth_tx = [ @api_credentials[:client_id],
-                       @api_credentials[:client_secret]
-                     ].join(':')
-        ps_auth_64 = Base64.encode64(ps_auth_tx).gsub(/\n/, '')
-        headers = {
-          'ContentType' => 'application/x-www-form-urlencoded;charset=UTF-8',
-          'Accept' => 'application/json',
-          'Authorization' => 'Basic ' + ps_auth_64 }
-        response = HTTParty.post( @api_credentials[:base_uri] +
-                                  @api_credentials[:auth_endpoint],
-                                  { headers: headers,
-                                    body: 'grant_type=client_credentials'} )
-        @options[:headers] ||= {}
-        if response.parsed_response && response.parsed_response['access_token']
-          @api_credentials[:access_token] = response.parsed_response['access_token']
-        end
+    def run
+      authenticate unless token_valid?
+      # command  = send(get_api_info)
+      # response = send_command_to_ps(command)
+    end
+
+    private
+
+    # In PowerSchool go to System>System Settings>Plugin Management Configuration>your plugin>Data Provider Configuration to manually check plugin expiration date
+    def authenticate
+      @credentials[:access_token] = get_token()
+      @options[:headers].merge!('Authorization' => 'Bearer ' + @credentials[:access_token])
+      pp credentials
+      raise AuthenticationError.new("Could not authenticate") unless @credentials[:access_token]
+      @authenticated = true
+    end
+
+    def token_valid?
+      return false if @credentials[:access_token].nil?
+      return false if @credentials[:token_expires] <= Time.now
+      return true
+    end
+
+    def get_token
+      response = HTTParty.post( credentials[:base_uri] +
+                                credentials[:auth_endpoint],
+                                { headers: auth_headers,
+                                  body: 'grant_type=client_credentials'} )
+      @options[:headers] ||= {}
+      if response.parsed_response && response.parsed_response['access_token']
+        @credentials[:token_expires] = Time.now + response.parsed_response['expires_in'].to_i
+        response.parsed_response['access_token']
       end
-      if @api_credentials[:access_token]
-        @options[:headers].merge!('Authorization' => 'Bearer ' + @api_credentials[:access_token])
-        @authenticated = true
-      else
-        raise AuthenticationError.new("Could not authenticate: %s -- headers: %s" % [response.inspect, headers])
-      end
-      return @authenticated
+    end
+
+    def auth_headers()
+      ps_auth_64 = encode_api_credentials
+      { 'ContentType' => 'application/x-www-form-urlencoded;charset=UTF-8',
+        'Accept' => 'application/json',
+        'Authorization' => 'Basic ' + ps_auth_64 }
+    end
+
+    def encode_api_credentials()
+      ps_auth_tx = [ credentials[:client_id],
+                     credentials[:client_secret]
+                   ].join(':')
+      Base64.encode64(ps_auth_tx).gsub(/\n/, '')
+    end
+
+    def attr_defaults
+      { base_uri:       ENV['PS_URL'],
+        auth_endpoint:  ENV['PS_AUTH_ENDPOINT'] || '/oauth/access_token',
+        client_id:      ENV['PS_CLIENT_ID'],
+        client_secret:  ENV['PS_CLIENT_SECRET'],
+        access_token:   ENV['PS_ACCESS_TOKEN'] || nil }
+    end
+
+    def opts_defaults
+      { :headers => { 'User-Agent' => "Ruby Powerschool",
+                      'Accept' => 'application/json',
+                      'Content-Type' => 'application/json'}
+      }
     end
 
     #
@@ -73,14 +100,5 @@ module PsUtilities
     #   @options.merge(other)
     # end
 
-    private
-
-    def defaults
-      { base_uri:       ENV['PS_URL'] || 'example.powerschool.com',
-        auth_endpoint:  ENV['PS_AUTH_ENDPOINT'] || '/oauth/access_token',
-        client_id:      ENV['PS_CLIENT_ID'],
-        client_secret:  ENV['PS_CLIENT_SECRET'],
-        access_token:   ENV['PS_ACCESS_TOKEN'] || nil }
-    end
   end
 end
