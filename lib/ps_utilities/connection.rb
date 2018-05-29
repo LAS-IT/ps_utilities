@@ -6,13 +6,16 @@ require 'ps_utilities/user_actions'
 
 module PsUtilities
 
+  class AuthenticationError < RuntimeError
+  end
+
   # The PsUtilities, makes it east to work with the Powerschool API
   # @since 0.1.0
   #
   # @note You should use environment variables to initialize your server.
   class Connection
 
-    attr_reader :credentials, :authenticated, :options
+    attr_reader :credentials, :options
 
     include PsUtilities::UserActions
 
@@ -20,29 +23,22 @@ module PsUtilities
       @credentials = attr_defaults.merge(attributes)
       @options         =  opts_defaults.merge(options)
 
-      raise ArgumentError, "missing client_secret"  if @credentials[:client_secret].nil?  or
+      raise ArgumentError, "missing client_secret" if @credentials[:client_secret].nil?  or
                                                       @credentials[:client_secret].empty?
-      raise ArgumentError, "missing client_id"      if @credentials[:client_id].nil?  or
+      raise ArgumentError, "missing client_id"     if @credentials[:client_id].nil?  or
                                                       @credentials[:client_id].empty?
-      raise ArgumentError, "missing base_uri"       if @credentials[:base_uri].nil?  or
+      raise ArgumentError, "missing base_uri"      if @credentials[:base_uri].nil?  or
                                                       @credentials[:base_uri].empty?
     end
 
-    def run
+    # with no command it just authenticates
+    def run(command: nil, attributes: {})
       authenticate unless token_valid?
       # command  = send(get_api_info)
-      # response = send_command_to_ps(command)
+      # command_to_ps(command)
     end
 
     private
-
-    # In PowerSchool go to System>System Settings>Plugin Management Configuration>your plugin>Data Provider Configuration to manually check plugin expiration date
-    def authenticate
-      @credentials[:access_token] = get_token()
-      @options[:headers].merge!('Authorization' => 'Bearer ' + @credentials[:access_token])
-      raise AuthenticationError.new("Could not authenticate") unless @credentials[:access_token]
-      @authenticated = true
-    end
 
     def token_valid?
       return false if @credentials[:access_token].nil?
@@ -50,16 +46,19 @@ module PsUtilities
       return true
     end
 
-    def get_token
+    # In PowerSchool go to System>System Settings>Plugin Management Configuration>your plugin>Data Provider Configuration to manually check plugin expiration date
+    def authenticate
+      @options[:headers] ||= {}
       response = HTTParty.post( credentials[:base_uri] +
                                 credentials[:auth_endpoint],
                                 { headers: auth_headers,
                                   body: 'grant_type=client_credentials'} )
-      @options[:headers] ||= {}
-      if response.parsed_response && response.parsed_response['access_token']
-        @credentials[:token_expires] = Time.now + response.parsed_response['expires_in'].to_i
-        response.parsed_response['access_token']
-      end
+
+      @credentials[:token_expires] = Time.now + response.parsed_response['expires_in']&.to_i
+      @credentials[:access_token]  = response.parsed_response['access_token']
+      @options[:headers].merge!('Authorization' => 'Bearer ' + @credentials[:access_token])
+
+      raise AuthenticationError.new("Could not authenticate") unless @credentials[:access_token]
     end
 
     def auth_headers()
@@ -81,7 +80,9 @@ module PsUtilities
         auth_endpoint:  ENV['PS_AUTH_ENDPOINT'] || '/oauth/access_token',
         client_id:      ENV['PS_CLIENT_ID'],
         client_secret:  ENV['PS_CLIENT_SECRET'],
-        access_token:   ENV['PS_ACCESS_TOKEN'] || nil }
+        # not recommended here - it changes (ok as a parameter though)
+        # access_token:   ENV['PS_ACCESS_TOKEN'] || nil,
+      }
     end
 
     def opts_defaults
@@ -90,14 +91,6 @@ module PsUtilities
                       'Content-Type' => 'application/json'}
       }
     end
-
-    #
-    # def options(other = {})
-    #   if !@authenticated
-    #     authenticate
-    #   end
-    #   @options.merge(other)
-    # end
 
   end
 end

@@ -22,7 +22,59 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+```ruby
+require 'ps_utilities'
+
+# INSTANTIATE
+#############
+# Required ENV_Vars - found at:
+# System>System Settings>Plugin Management Configuration>your plugin>Data_Provider_Configuration
+# ENV['PS_URL'] = 'https://ps.school.k12/'              # (no default)
+# ENV['PS_AUTH_ENDPOINT'] = '/oauth/access_token'       # (the default)
+# ENV['PS_CLIENT_ID'] = '23qewrdfghjuy675434ertyui'     # (no default)
+# ENV['PS_CLIENT_SECRET'] = '43ertfghjkloi9876trdfrdfg' # (no default)
+# ENV['PS_ACCESS_TOKEN'] = nil                          # (not recommended)
+powerschool = PsUtilities::Connection.new
+
+# or use parameters
+powerschool = PsUtilities::Connection.new(
+     { base_uri: 'https://ps.school.k12/',
+       auth_endpoint: '/oauth/access_token',
+       client_id: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+       client_secret:  'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+     }
+)
+pp powerschool
+# STATE BEFORE AUTHENTATION
+# @credentials=
+#  {:base_uri=>"https://las-test.powerschool.com",
+#   :auth_endpoint=>"/oauth/access_token",
+#   :client_id=>"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+#   :client_secret=>"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"},
+# @options=
+#  {:headers=>{"User-Agent"=>"Ruby Powerschool", "Accept"=>"application/json", "Content-Type"=>"application/json"}}>
+
+
+# see connection class connection info
+# run with no params - just authenticates (gets token)
+powerschool.run
+pp powerschool
+# STATE AFTER AUTHENTICATION - notice: token_expires (field)
+# @credentials=
+#  {:base_uri=>"https://las-test.powerschool.com",
+#   :auth_endpoint=>"/oauth/access_token",
+#   :client_id=>"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+#   :client_secret=>"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+#   :token_expires=>2018-02-18 16:47:28 +0200,
+#   :access_token=>"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"},
+# @options=
+#  {:headers=>
+#    {"User-Agent"=>"Ruby Powerschool",
+#     "Accept"=>"application/json",
+#     "Content-Type"=>"application/json",
+#     "Authorization"=>"Bearer xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"}}>
+
+```
 
 ## Development
 
