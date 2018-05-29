@@ -76,8 +76,8 @@ module PsUtilities
     private
 
     def defaults
-      { base_uri:       ENV['PS_URL'],
-        auth_endpoint:  ENV['PS_AUTH_ENDPOINT'],
+      { base_uri:       ENV['PS_URL'] || 'example.powerschool.com',
+        auth_endpoint:  ENV['PS_AUTH_ENDPOINT'] || '/oauth/access_token',
         client_id:      ENV['PS_CLIENT_ID'],
         client_secret:  ENV['PS_CLIENT_SECRET'],
         access_token:   ENV['PS_ACCESS_TOKEN'] || nil }
