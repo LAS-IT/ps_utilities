@@ -45,7 +45,7 @@ powerschool = PsUtilities::Connection.new(
      }
 )
 pp powerschool
-# STATE BEFORE AUTHENTATION
+# BEFORE AUTHENTATION
 # @credentials=
 #  {:base_uri=>"https://las-test.powerschool.com",
 #   :auth_endpoint=>"/oauth/access_token",
@@ -59,7 +59,7 @@ pp powerschool
 # run with no params - just authenticates (gets token)
 powerschool.run
 pp powerschool
-# STATE AFTER AUTHENTICATION - notice: token_expires (field)
+# AFTER AUTHENTICATION - notice: token_expires (field)
 # @credentials=
 #  {:base_uri=>"https://las-test.powerschool.com",
 #   :auth_endpoint=>"/oauth/access_token",
