@@ -2,10 +2,11 @@ require 'openssl'
 require 'base64'
 require 'json'
 require 'httparty'
+require 'ps_utilities/user_actions'
 
-module PsUtilties
+module PsUtilities
 
-  # The PsUtilties, makes it east to work with the Powerschool API
+  # The PsUtilities, makes it east to work with the Powerschool API
   # @since 0.1.0
   #
   # @note You should use environment variables to initialize your server.
@@ -14,9 +15,9 @@ module PsUtilties
     attr_reader :api_credentials, :authenticated, :options
 
     include PsUtilities::UserActions
-    
-    BASE_URI = ENV['PS_URL'] || 'https://partner3.powerschool.com'
-    AUTH_ENDPOINT = '/oauth/access_token'
+
+    # BASE_URI = ENV['PS_URL'] || 'https://partner3.powerschool.com'
+    # AUTH_ENDPOINT = ENV['PS_AUTH_ENDPOINT']
 
     def initialize(credentials: {}, options: {})
       @api_credentials = defaults.merge(credentials)
@@ -28,19 +29,12 @@ module PsUtilties
          @api_credentials[:access_token].empty?
           raise AuthenticationError, 'Access token or api credentials are required'
       end
-      @options =  {:headers => { 'User-Agent' => "Ruby Powerschool #{VERSION}",
+      @options =  {:headers => { 'User-Agent' => "Ruby Powerschool",
                                 'Accept' => 'application/json',
                                 'Content-Type' => 'application/json'
                                 }
                   }.merge(options)
     end
-
-    # def options(other = {})
-    #   if !@authenticated
-    #     authenticate
-    #   end
-    #   @options.merge(other)
-    # end
 
     def authenticate(force = false)
       @authenticated = false
@@ -53,8 +47,8 @@ module PsUtilties
           'ContentType' => 'application/x-www-form-urlencoded;charset=UTF-8',
           'Accept' => 'application/json',
           'Authorization' => 'Basic ' + ps_auth_64 }
-        response = HTTParty.post( BASE_URI +
-                                  AUTH_ENDPOINT,
+        response = HTTParty.post( @api_credentials[:base_uri] +
+                                  @api_credentials[:auth_endpoint],
                                   { headers: headers,
                                     body: 'grant_type=client_credentials'} )
         @options[:headers] ||= {}
@@ -71,10 +65,20 @@ module PsUtilties
       return @authenticated
     end
 
+    #
+    # def options(other = {})
+    #   if !@authenticated
+    #     authenticate
+    #   end
+    #   @options.merge(other)
+    # end
+
     private
 
     def defaults
-      { client_id:      ENV['PS_CLIENT_ID'],
+      { base_uri:       ENV['PS_URL'],
+        auth_endpoint:  ENV['PS_AUTH_ENDPOINT'],
+        client_id:      ENV['PS_CLIENT_ID'],
         client_secret:  ENV['PS_CLIENT_SECRET'],
         access_token:   ENV['PS_ACCESS_TOKEN'] || nil }
     end

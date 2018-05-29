@@ -11,3 +11,5 @@
 .rspec_status
 
 .rbenv-vars
+
+*.gem
