@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.email         = ["leeweisbecker@gmail.com"]
 
   spec.summary       = %q{Simple ruby wrapper for Powerschool API interaction.}
-  spec.description   = %q{Uses oauth2 to connection to the Powerschool API.}
+  spec.description   = %q{Uses oauth2 to connection to the Powerschool API. Heavily refactored code (not dependent on Rails) starting with: https://github.com/LAS-IT/powerschool_tomk32}
   spec.homepage      = "https://github.com/LAS-IT/ps_utilities"
   spec.license       = "MIT"
 
