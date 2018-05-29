@@ -1,6 +1,0 @@
-PS_URL=https://las-test.powerschool.com
-PS_AUTH_ENDPOINT=/oauth/access_token
-PS_CLIENT_ID=99702fda-963e-4494-9276-94dfca726669
-PS_CLIENT_SECRET=1c6ba14b-e19d-498c-b930-404932702c57
-PS_USERNAME=
-PS_PASSWORD=
