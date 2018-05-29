@@ -81,7 +81,7 @@ module PsUtilities
         client_id:      ENV['PS_CLIENT_ID'],
         client_secret:  ENV['PS_CLIENT_SECRET'],
         # not recommended here - it changes (ok as a parameter though)
-        # access_token:   ENV['PS_ACCESS_TOKEN'] || nil,
+        access_token:   ENV['PS_ACCESS_TOKEN'] || nil,
       }
     end
 

@@ -2,7 +2,7 @@ PATH
   remote: .
   specs:
     ps_utilities (0.1.0)
-      httparty
+      httparty (~> 0.16)
 
 GEM
   remote: https://rubygems.org/
