@@ -6,8 +6,8 @@ require "ps_utilities/version"
 Gem::Specification.new do |spec|
   spec.name          = "ps_utilities"
   spec.version       = PsUtilities::Version::VERSION
-  spec.authors       = ["Lee Weisbecker"]
-  spec.email         = ["leeweisbecker@gmail.com"]
+  spec.authors       = ["Lee Weisbecker","Bill Tihen"]
+  spec.email         = ["leeweisbecker@gmail.com", 'btihen@gmail.com']
 
   spec.summary       = %q{Simple ruby wrapper for Powerschool API interaction.}
   spec.description   = %q{Uses oauth2 to connection to the Powerschool API. Heavily refactored code (not dependent on Rails) starting with: https://github.com/LAS-IT/powerschool_tomk32}

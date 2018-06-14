@@ -1,8 +1,10 @@
 # PsUtilities
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/ps_utilities`. To experiment with that code, run `bin/console` for an interactive prompt.
+Ruby wrapper for Powerschool API interaction - without using rails dependencies.
 
-TODO: Delete this and the text above, and describe your gem
+This uses oauth2 to connection to the Powerschool API.
+
+This code is heavily refactored code from: https://github.com/LAS-IT/powerschool_tomk32
 
 ## Installation
 
