@@ -1,6 +1,6 @@
 module PsUtilities
 
-  module UserActions
+  module StudentActions
 
   end
 

@@ -24,7 +24,7 @@ module PsUtilities
 
     attr_reader :credentials, :options
 
-    include PsUtilities::UserActions
+    include PsUtilities::StudentActions
 
     def initialize(attributes: {}, options: {})
       @credentials = attr_defaults.merge(attributes)
