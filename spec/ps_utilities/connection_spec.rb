@@ -5,7 +5,7 @@ RSpec.describe PsUtilities::Connection do
   context "version test" do
     it "displays correct gem version" do
       ps  = PsUtilities::Connection.new
-      expect( ps.version ).to eq( PsUtilities::Version::VERSION )
+      expect( ps.version ).to match( PsUtilities::Version::VERSION )
     end
   end
 

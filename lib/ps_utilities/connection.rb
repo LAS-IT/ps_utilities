@@ -52,7 +52,9 @@ module PsUtilities
       when nil, :authenticate
         # authenticate            unless token_valid?
       when :get, :put, :post
-        send(command, api_path, options) unless api_path.empty?
+        api(command, api_path, options)         unless api_path.empty?
+      # when :get, :put, :post
+      #   send(:api, command, api_path, options)  unless api_path.empty?
       else
         send(command, params)
       end
@@ -61,52 +63,14 @@ module PsUtilities
     private
 
     # options = {query: {}}
-    def get(api_path, options={})
+    # verb = :get, :put, :post, etc
+    def api(verb, api_path, options={})
       count   = 0
       retries = 3
       ps_url  = base_uri + api_path
       options = options.merge(headers)
       begin
-        HTTParty.get(ps_url, options)
-        # self.class.get(url, query: options[:query], headers: options[:headers])
-      rescue Net::ReadTimeout, Net::OpenTimeout
-        if count < retries
-          count += 1
-          retry
-        else
-          { error: "no response (timeout) from URL: #{url}"  }
-        end
-      end
-    end
-
-    # options = {body: {}}
-    def put(api_path, options={})
-      count   = 0
-      retries = 3
-      ps_url  = base_uri + api_path
-      options = options.merge(headers)
-      begin
-        HTTParty.get(ps_url, options)
-        # self.class.get(url, query: options[:query], headers: options[:headers])
-      rescue Net::ReadTimeout, Net::OpenTimeout
-        if count < retries
-          count += 1
-          retry
-        else
-          { error: "no response (timeout) from URL: #{url}"  }
-        end
-      end
-    end
-
-    # options = {body: {}}
-    def post(api_path, options={})
-      count   = 0
-      retries = 3
-      ps_url  = base_uri + api_path
-      options = options.merge(headers)
-      begin
-        HTTParty.get(ps_url, options)
-        # self.class.get(url, query: options[:query], headers: options[:headers])
+        HTTParty.send(verb, ps_url, options)
       rescue Net::ReadTimeout, Net::OpenTimeout
         if count < retries
           count += 1
