@@ -22,9 +22,27 @@ Or install it yourself as:
 
     $ gem install ps_utilities
 
+## ToDo
+
+- add docs
+- add additional prebuilt commands
+- add example code
+- account creation?
+- account updates?
+- web mock and more tests
+- recursion when retrieving all kids?
+- contact others interested in PS API for collaboration
+
 ## Change Log
 
-* **v0.1.0** - 2018-06-??
+* **v0.1.1** - 2018-06-21
+  - add additional prebuilt commands
+  - add example code
+  - account creation?
+  - account updates?
+  - web mock and more tests
+  - recursion when retrieving all kids?
+* **v0.1.0** - 2018-06-21
   - get student counts and get all students (up to 500 kids) - no paging yet
 
 ## Usage
@@ -65,9 +83,9 @@ ps.run
 #
 url = "/ws/v1/district/student/count"
 options[:query] = { "q" => "school_enrollment.enroll_status_code==0" }
-count = ps.send(:get, url, options)
+count = ps.run(command: :get, url: url, options: options)
 # or
-count = ps.send(:get, "/ws/v1/district/student/count?q=school_enrollment.enroll_status_code==0")
+count = ps.run(command: :get, url:  "/ws/v1/district/student/count?q=school_enrollment.enroll_status_code==0")
 # or as a pre-build common command
 count = ps.run(command: :get_active_students_count)
 pp count
@@ -75,7 +93,7 @@ pp count
 
 kids  = ps.run(command: :get_active_students_info)
 or
-kids  = ps.send(:get, "/ws/v1/district/student?q=school_enrollment.enroll_status==a&pagesize=500")
+kids  = ps.run(command: :get, url: "/ws/v1/district/student?q=school_enrollment.enroll_status==a&pagesize=500")
 pp kids
 # => {"students"=>
 #   {"@expansions"=>
@@ -91,7 +109,7 @@ pp kids
 # }
 
 # get one kid
-one = ps.send(:get, "/ws/v1/district/student?expansions=school_enrollment&q=student_username==xxxxxx237")
+one = ps.run(command: :get, url:  "/ws/v1/district/student?expansions=school_enrollment&q=student_username==xxxxxx237")
 # => {"students"=>
 #   {"@expansions"=>
 #     "demographics, addresses, alerts, phones, school_enrollment, ethnicity_race, contact, contact_info, initial_enrollment, schedule_setup, fees, lunch",
