@@ -4,7 +4,7 @@ Ruby wrapper for Powerschool API interaction - without using rails dependencies.
 
 This uses oauth2 to connection to the Powerschool API.
 
-This code is heavily refactored code from: https://github.com/LAS-IT/powerschool_tomk32
+This code is heavily refactored code from: https://github.com/TomK32/powerschool
 
 ## Installation
 
@@ -22,6 +22,11 @@ Or install it yourself as:
 
     $ gem install ps_utilities
 
+## Change Log
+
+* **v0.1.0** - 2018-06-??
+  - get student counts and get all students (up to 500 kids) - no paging yet
+
 ## Usage
 
 ```ruby
@@ -29,6 +34,16 @@ require 'ps_utilities'
 
 # INSTANTIATE
 #############
+
+# use parameters
+# ps = PsUtilities::Connection.new(
+#      { base_uri: 'https://ps.school.k12/',
+#        auth_endpoint: '/oauth/access_token',
+#        client_id: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+#        client_secret:  'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+#      }
+# )
+
 # Required ENV_Vars - found at:
 # System>System Settings>Plugin Management Configuration>your plugin>Data_Provider_Configuration
 # ENV['PS_URL'] = 'https://ps.school.k12/'              # (no default)
@@ -36,45 +51,68 @@ require 'ps_utilities'
 # ENV['PS_CLIENT_ID'] = '23qewrdfghjuy675434ertyui'     # (no default)
 # ENV['PS_CLIENT_SECRET'] = '43ertfghjkloi9876trdfrdfg' # (no default)
 # ENV['PS_ACCESS_TOKEN'] = nil                          # (not recommended)
-powerschool = PsUtilities::Connection.new
 
-# or use parameters
-powerschool = PsUtilities::Connection.new(
-     { base_uri: 'https://ps.school.k12/',
-       auth_endpoint: '/oauth/access_token',
-       client_id: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-       client_secret:  'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
-     }
-)
-pp powerschool
-# BEFORE AUTHENTATION
-# @credentials=
-#  {:base_uri=>"https://las-test.powerschool.com",
-#   :auth_endpoint=>"/oauth/access_token",
-#   :client_id=>"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-#   :client_secret=>"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"},
-# @options=
-#  {:headers=>{"User-Agent"=>"Ruby Powerschool", "Accept"=>"application/json", "Content-Type"=>"application/json"}}>
-
+# use ENV Vars and just do:
+ps = PsUtilities::Connection.new
+pp ps
 
 # see connection class connection info
 # run with no params - just authenticates (gets token)
-powerschool.run
-pp powerschool
-# AFTER AUTHENTICATION - notice: token_expires (field)
-# @credentials=
-#  {:base_uri=>"https://las-test.powerschool.com",
-#   :auth_endpoint=>"/oauth/access_token",
-#   :client_id=>"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-#   :client_secret=>"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-#   :token_expires=>2018-02-18 16:47:28 +0200,
-#   :access_token=>"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"},
-# @options=
-#  {:headers=>
-#    {"User-Agent"=>"Ruby Powerschool",
-#     "Accept"=>"application/json",
-#     "Content-Type"=>"application/json",
-#     "Authorization"=>"Bearer xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"}}>
+ps.run(command: :authenticate)
+# or
+ps.run
+
+#
+url = "/ws/v1/district/student/count"
+options[:query] = { "q" => "school_enrollment.enroll_status_code==0" }
+count = ps.send(:get, url, options)
+# or
+count = ps.send(:get, "/ws/v1/district/student/count?q=school_enrollment.enroll_status_code==0")
+# or as a pre-build common command
+count = ps.run(command: :get_active_students_count)
+pp count
+# => {"resource"=>{"count"=>423}}
+
+kids  = ps.run(command: :get_active_students_info)
+or
+kids  = ps.send(:get, "/ws/v1/district/student?q=school_enrollment.enroll_status==a&pagesize=500")
+pp kids
+# => {"students"=>
+#   {"@expansions"=>
+#     "demographics, addresses, alerts, phones, school_enrollment, ethnicity_race, contact, contact_info, initial_enrollment, schedule_setup, fees, lunch",
+#    "@extensions"=>
+#     "s_stu_crdc_x,activities,c_studentlocator,u_students_extension,u_studentsuserfields,s_stu_ncea_x,s_stu_edfi_x,studentcorefields",
+#    "student"=>
+#     [
+#       {"id"=>4916, "local_id"=>112406, "student_username"=>"xxxx406", "name"=>{"first_name"=>"Xxxxxx", "last_name"=>"xxxxx"}},
+#       {"id"=>5037, "local_id"=>112380, "student_username"=>"yyyyy380", "name"=>{"first_name"=>"Yyyyyy", "last_name"=>"YYYYY"}},
+#     ]
+#   }
+# }
+
+# get one kid
+one = ps.send(:get, "/ws/v1/district/student?expansions=school_enrollment&q=student_username==xxxxxx237")
+# => {"students"=>
+#   {"@expansions"=>
+#     "demographics, addresses, alerts, phones, school_enrollment, ethnicity_race, contact, contact_info, initial_enrollment, schedule_setup, fees, lunch",
+#    "@extensions"=>
+#     "s_stu_crdc_x,activities,c_studentlocator,u_students_extension,u_studentsuserfields,s_stu_ncea_x,s_stu_edfi_x,studentcorefields",
+#    "student"=>
+#     {"id"=>5999,
+#      "local_id"=>103237,
+#      "student_username"=>"aaaaaaa237",
+#      "name"=>{"first_name"=>"Aaaaaa", "last_name"=>"AAAAAAAAA"},
+#      "school_enrollment"=>
+#       {"enroll_status"=>"A",
+#        "enroll_status_description"=>"Active",
+#        "enroll_status_code"=>0,
+#        "grade_level"=>12,
+#        "entry_date"=>"2017-08-25",
+#        "exit_date"=>"2018-06-09",
+#        "school_number"=>33,
+#        "school_id"=>6,
+#        "entry_comment"=>"Promote Same School",
+#        "full_time_equivalency"=>{"fteid"=>1070, "name"=>"FTE Value: 1"}}}}}
 
 ```
 

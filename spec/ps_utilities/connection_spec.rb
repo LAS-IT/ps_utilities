@@ -1,14 +1,5 @@
 require "spec_helper"
 
-# BEFORE AUTHENTATION
-# @credentials=
-#  {:base_uri=>"https://las-test.powerschool.com",
-#   :auth_endpoint=>"/oauth/access_token",
-#   :client_id=>"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-#   :client_secret=>"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"},
-# @options=
-#  {:headers=>{"User-Agent"=>"Ruby Powerschool", "Accept"=>"application/json", "Content-Type"=>"application/json"}}>
-
 RSpec.describe PsUtilities::Connection do
 
   context "server configures with ENV-VARS" do
@@ -37,13 +28,6 @@ RSpec.describe PsUtilities::Connection do
       stub_const('ENV', ENV.to_hash.merge('PS_CLIENT_SECRET' => 'client_secret'))
       ps = PsUtilities::Connection.new
       expect(ps.credentials[:client_secret]).to eq(ENV['PS_CLIENT_SECRET'])
-    end
-    # not recommended - changes - shouldn't be part of ENV-VARS
-    xit "access_token" do
-      stub_const('ENV', ENV.to_hash.merge('PS_ACCESS_TOKEN' => 'access_token'))
-      ps = PsUtilities::Connection.new
-      expect(ps.credentials[:access_token]).to be nil
-      # expect(ps.credentials[:access_token]).to eq(ENV['PS_ACCESS_TOKEN'])
     end
   end
 
