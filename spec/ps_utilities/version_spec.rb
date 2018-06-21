@@ -5,7 +5,7 @@ RSpec.describe PsUtilities do
   end
 
   it "has the correct version number" do
-    expect(PsUtilities::Version::VERSION).to eq "0.2.0"
+    expect(PsUtilities::Version::VERSION).to eq "0.2.1"
   end
 
 end
