@@ -25,23 +25,20 @@ Or install it yourself as:
 ## ToDo
 
 - add docs
-- add additional prebuilt commands
 - add example code
 - account creation?
 - account updates?
 - web mock and more tests
+- add additional prebuilt commands
 - recursion when retrieving all kids?
 - contact others interested in PS API for collaboration
 
 ## Change Log
 
-* **v0.1.1** - 2018-06-21
-  - add additional prebuilt commands
-  - add example code
-  - account creation?
-  - account updates?
-  - web mock and more tests
-  - recursion when retrieving all kids?
+* **v0.2.1** - 2018-06-??
+  - update / improve code docs
+* **v0.2.0** - 2018-06-21 - not compatible with v0.1.0
+  - update api - using api_path for clarity
 * **v0.1.0** - 2018-06-21
   - get student counts and get all students (up to 500 kids) - no paging yet
 
@@ -81,19 +78,23 @@ ps.run(command: :authenticate)
 ps.run
 
 #
-url = "/ws/v1/district/student/count"
-options[:query] = { "q" => "school_enrollment.enroll_status_code==0" }
-count = ps.run(command: :get, url: url, options: options)
+api_path = "/ws/v1/district/student/count"
+options  = { query: { "q" => "school_enrollment.enroll_status_code==0" } }
+count    = ps.run( command: :get, api_path: api_path, options: options )
 # or
-count = ps.run(command: :get, url:  "/ws/v1/district/student/count?q=school_enrollment.enroll_status_code==0")
-# or as a pre-build common command
-count = ps.run(command: :get_active_students_count)
+# pre-build common command
+count    = ps.run( command: :get_active_students_count )
 pp count
 # => {"resource"=>{"count"=>423}}
 
-kids  = ps.run(command: :get_active_students_info)
-or
-kids  = ps.run(command: :get, url: "/ws/v1/district/student?q=school_enrollment.enroll_status==a&pagesize=500")
+# list of active students
+api_path = "/ws/v1/district/student"
+options  = { query: { "q"=>"school_enrollment.enroll_status==a",
+                      "pagesize"=>"500" } }
+kids     = ps.run( command: :get, api_path: api_path, options: options )
+# or
+# pre-built
+kids     = ps.run( command: :get_active_students_info )
 pp kids
 # => {"students"=>
 #   {"@expansions"=>
@@ -108,8 +109,16 @@ pp kids
 #   }
 # }
 
+
 # get one kid
-one = ps.run(command: :get, url:  "/ws/v1/district/student?expansions=school_enrollment&q=student_username==xxxxxx237")
+api_path = "/ws/v1/district/student"
+option   =  { query: {"expansions"=>"school_enrollment,contact,contact_info",
+                      "q"         =>"student_username==user237"} }
+one      = ps.run(command: :get, api_path: api_path )
+# or
+# pre-built
+params   = {username: "user237"}
+one      = ps.run(command: :get_one_student_record, params: params )
 # => {"students"=>
 #   {"@expansions"=>
 #     "demographics, addresses, alerts, phones, school_enrollment, ethnicity_race, contact, contact_info, initial_enrollment, schedule_setup, fees, lunch",

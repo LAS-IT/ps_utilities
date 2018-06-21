@@ -2,6 +2,13 @@ require "spec_helper"
 
 RSpec.describe PsUtilities::Connection do
 
+  context "version test" do
+    it "displays correct gem version" do
+      ps  = PsUtilities::Connection.new
+      expect( ps.version ).to eq( PsUtilities::Version::VERSION )
+    end
+  end
+
   context "server configures with ENV-VARS" do
     it "Instantiates with minimal ENV-VARS" do
       stub_const('ENV', ENV.to_hash.merge('PS_URL' => 'ps_url'))

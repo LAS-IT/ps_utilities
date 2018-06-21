@@ -24,7 +24,7 @@ module PsUtilities
   # @note You should use environment variables to initialize your server.
   class Connection
 
-    attr_reader :credentials, :headers
+    attr_reader :credentials, :headers, :base_uri, :auth_path, :version
 
     include PsUtilities::PreBuiltGet
     include PsUtilities::PreBuiltPut
@@ -33,6 +33,9 @@ module PsUtilities
     def initialize(attributes: {}, headers: {})
       @credentials = attr_defaults.merge(attributes)
       @headers     = header_defaults.merge(headers)
+      @base_uri    = credentials[:base_uri]
+      @auth_path   = credentials[:auth_endpoint]
+      @version     = "v#{PsUtilities::Version::VERSION}"
 
       raise ArgumentError, "missing client_secret" if credentials[:client_secret].nil?  or
                                                       credentials[:client_secret].empty?
@@ -43,13 +46,13 @@ module PsUtilities
     end
 
     # with no command it just authenticates
-    def run(command: nil, params: {}, url: nil, options: {})
+    def run(command: nil, params: {}, api_path: "", options: {})
       authenticate   unless token_valid?
       case command
       when nil, :authenticate
         # authenticate            unless token_valid?
       when :get, :put, :post
-        send(command, url, options) unless url.empty?
+        send(command, api_path, options) unless api_path.empty?
       else
         send(command, params)
       end
@@ -58,17 +61,17 @@ module PsUtilities
     private
 
     # options = {query: {}}
-    def get(url, options={})
-      max_retries = 3
-      times_retried = 0
+    def get(api_path, options={})
+      count   = 0
+      retries = 3
+      ps_url  = base_uri + api_path
       options = options.merge(headers)
-      ps_url = credentials[:base_uri] + url
       begin
         HTTParty.get(ps_url, options)
         # self.class.get(url, query: options[:query], headers: options[:headers])
       rescue Net::ReadTimeout, Net::OpenTimeout
-        if times_retried < max_retries
-          times_retried += 1
+        if count < retries
+          count += 1
           retry
         else
           { error: "no response (timeout) from URL: #{url}"  }
@@ -77,17 +80,17 @@ module PsUtilities
     end
 
     # options = {body: {}}
-    def put(url, options={})
-      max_retries = 3
-      times_retried = 0
+    def put(api_path, options={})
+      count   = 0
+      retries = 3
+      ps_url  = base_uri + api_path
       options = options.merge(headers)
-      ps_url = credentials[:base_uri] + url
       begin
-        HTTParty.put(ps_url, options )
-        # self.class.get(url, body: options[:body], headers: options[:headers])
+        HTTParty.get(ps_url, options)
+        # self.class.get(url, query: options[:query], headers: options[:headers])
       rescue Net::ReadTimeout, Net::OpenTimeout
-        if times_retried < max_retries
-          times_retried += 1
+        if count < retries
+          count += 1
           retry
         else
           { error: "no response (timeout) from URL: #{url}"  }
@@ -96,17 +99,17 @@ module PsUtilities
     end
 
     # options = {body: {}}
-    def post(url, options={})
-      max_retries = 3
-      times_retried = 0
+    def post(api_path, options={})
+      count   = 0
+      retries = 3
+      ps_url  = base_uri + api_path
       options = options.merge(headers)
-      ps_url = credentials[:base_uri] + url
       begin
-        HTTParty.post(ps_url, options )
-        # self.class.get(url, body: options[:body], headers: options[:headers])
+        HTTParty.get(ps_url, options)
+        # self.class.get(url, query: options[:query], headers: options[:headers])
       rescue Net::ReadTimeout, Net::OpenTimeout
-        if times_retried < max_retries
-          times_retried += 1
+        if count < retries
+          count += 1
           retry
         else
           { error: "no response (timeout) from URL: #{url}"  }
@@ -117,7 +120,8 @@ module PsUtilities
     # In PowerSchool go to System>System Settings>Plugin Management Configuration>your plugin>Data Provider Configuration to manually check plugin expiration date
     def authenticate
       @headers[:headers] ||= {}
-      ps_url = credentials[:base_uri] + credentials[:auth_endpoint]
+      ps_url   = base_uri + auth_path
+      # ps_url = credentials[:base_uri] + credentials[:auth_endpoint]
       response = HTTParty.post(ps_url, {headers: auth_headers,
                                         body: 'grant_type=client_credentials'})
 
@@ -139,16 +143,16 @@ module PsUtilities
       return true
     end
 
-    def auth_headers
+    def auth_headers(creds64 = encode_credentials)
       { 'ContentType' => 'application/x-www-form-urlencoded;charset=UTF-8',
         'Accept' => 'application/json',
-        'Authorization' => 'Basic ' + encode_credentials
+        'Authorization' => 'Basic ' + creds64
       }
     end
 
-    def encode_credentials
-      ps_auth_text = [ credentials[:client_id],
-                       credentials[:client_secret]
+    def encode_credentials(creds = credentials)
+      ps_auth_text = [ creds[:client_id],
+                       creds[:client_secret]
                      ].join(':')
       Base64.encode64(ps_auth_text).gsub(/\n/, '')
     end

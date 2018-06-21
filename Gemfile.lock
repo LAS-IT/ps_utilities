@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    ps_utilities (0.1.0)
+    ps_utilities (0.2.0)
       httparty (~> 0.16)
 
 GEM
@@ -36,4 +36,4 @@ DEPENDENCIES
   rspec (~> 3.7)
 
 BUNDLED WITH
-   1.16.1
+   1.16.2
