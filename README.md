@@ -90,9 +90,11 @@ pp count
 # => {"resource"=>{"count"=>423}}
 
 # list of active students
+page_number = 2
 api_path = "/ws/v1/district/student"
 options  = { query: { "q"=>"school_enrollment.enroll_status==a",
-                      "pagesize"=>"500" } }
+                      "pagesize"=>"500",
+                      "page"=> "#{page_number}" } }
 kids     = ps.run( command: :get, api_path: api_path, options: options )
 # or
 # pre-built
@@ -112,7 +114,7 @@ pp kids
 # }
 
 
-# get one kid
+# get one kid - using multiple extensions
 api_path = "/ws/v1/district/student"
 option   =  { query: {"expansions"=>"school_enrollment,contact,contact_info",
                       "q"         =>"student_username==user237"} }
@@ -144,6 +146,196 @@ one      = ps.run(command: :get_one_student_record, params: params )
 #        "full_time_equivalency"=>{"fteid"=>1070, "name"=>"FTE Value: 1"}}}}}
 
 ```
+
+## PowerSchool API Notes
+
+### POST to Authenticate with Oauth2
+```
+base64_credentials = Base64.encode64( [client_id,client_secret].join(":") ).gsub(/\n/, '')
+HTTParty.post( "#{base_uri}/oauth/access_token",
+              { body: 'grant_type=client_credentials',
+                headers: {
+                  'ContentType' => 'application/x-www-form-urlencoded;charset=UTF-8',
+                  'Accept' => 'application/json',
+                  'Authorization' => "Basic #{base64_credentials}"
+                }
+              })
+```
+
+### Headers after Authentication
+```
+{:headers=>
+  { "User-Agent"=>"PsUtilitiesGem - v0.2.2",
+    "Accept"=>"application/json",
+    "Content-Type"=>"application/json",
+    "Authorization"=>"Bearer #{authorized_token}"
+  }
+}
+```
+
+### Query Operators for GETS - https://support.powerschool.com/developer/#/page/searching
+* **=gt=** - greater than
+* **=ge=** - greater than or equal to
+* **=lt=** - less than
+* **=le=** - less than or equal to
+* **==**   - equal to
+```
+Join query criteria with ";" 
+
+# EXAMPLE QUERY
+/ws/v1/district/student/count?q=school_enrollment.enroll_status==A;school_enrollment.entry_date=gt=2017-08-01
+```
+
+### Large Query Options - PAGINATION - https://support.powerschool.com/developer/#/page/pagination
+* **page_number** - The n-th set of records. The default value is 1.
+* **page_size**   - The maximum number of students returned per page. This value cannot be greater than the PowerSchool Max Request Number, which is the default value (although changes can take a while).
+```
+# Paging when getting all students
+/ws/v1/district/student?page={page_number}&pagesize={page_size}
+#
+# Paging with a query
+/ws/v1/district/student?page={page_number}&pagesize={page_size}&q=school_enrollment.enroll_status==A;school_enrollment.entry_date=gt=2017-08-01
+```
+
+### Data Dictionary -- Fields in the body - that can be updated:
+* https://support.powerschool.com/developer/#/page/data-dictionary#student
+
+### Example Details on Districts - GET - /ws/v1/district
+* **GET /ws/v1/district** - District Info https://support.powerschool.com/developer/#/page/district-resources
+* **GET /ws/v1/district/school** - School Info within District
+* **GET /ws/v1/district/school/count** - Count Schools within District
+* **GET /ws/v1/district/student** - Student Info within District
+* **GET /ws/v1/district/student/count** - Student Info within District
+* **STUDENT QUERIES:**
+  - **student_username** - Valid student usernames. Internationalized characters are supported.
+  - **local_id** - Valid student number.
+  - **name.last_name** - String with optional wildcard *, for example Ada*. Internationalized characters are also supported.
+  - **school_enrollment.enroll_status_code** - Any integer: 0 (Active), -1 (Pre-Registered), 2 (Transferred-Out), 3 (Graduated), 4 (Historical), and all others integers are considered Inactive.
+  - **school_enrollment.enroll_status** - One of the following letters, case-insensitive: A (Active), P (Pre-Registered), T (Transferred-Out), G (Graduated), H (Historical), I (Inactive) -- this is translated to an enroll_status_code prior to the filter.
+  - **school_enrollment.entry_date** -- Date with format YYYY-MM-DD.
+  - **state_province_id**
+* **EXPANSIONS:** (get extra details) - be careful with this when pulling many students
+  - addresses
+  - alerts
+  - contact
+  - contact_info
+  - demographics
+  - ethnicity_race
+  - fees
+  - initial_enrollment
+  - lunch
+  - phones
+  - schedule_setup
+  - school_enrollment
+
+
+### MORE API PATHS (END POINTS) OVERVIEWS
+**HELPFUL DOCS**
+- https://support.powerschool.com/developer/#/page/resources
+- https://support.powerschool.com/developer/#/page/data-dictionary#student_id
+
+**Seachable API Calls**
+* (/ws/schema) - https://support.powerschool.com/developer/#/page/powerquery-resources
+* (all other paths) - https://support.powerschool.com/developer/#/page/core-resources
+
+**END POINTS - API PATHS**
+
+* **GENERAL INFO** - */ws/v1*
+  * **Course Info** - https://support.powerschool.com/developer/#/page/course-resources
+  - **GET /ws/v1/course/{id}** - Course info
+  * --------
+  * **Distrect Info** - https://support.powerschool.com/developer/#/page/district-resources
+  * **GET /ws/v1/district** - District Info
+  * **GET /ws/v1/district/school** - School Info within District
+  * **GET /ws/v1/district/school/count** - Count Schools within District
+  * **GET /ws/v1/district/student** - Student Info within District
+  * **GET /ws/v1/district/student/count** - Student Info within District
+  * --------
+  * **Event Subscriptions** - https://support.powerschool.com/developer/#/page/event-subscription-resources
+  * **GET /ws/v1/event_subscription** - Get Event Subscriptions -
+  * **PUT /ws/v1/event_subscription** - Update Event Subscriptions
+  * **DELETE /ws/v1/event_subscription** - Delete Event Subscriptions
+  * --------
+  * **Student Fee Transaction** - https://support.powerschool.com/developer/#/page/fee
+  * **POST /ws/v1/fee/transaction**
+  * --------
+  * **School Info** - https://support.powerschool.com/developer/#/page/school-resources
+  * **GET /ws/v1/school/{id}** - Return School infomation
+  * **GET /ws/v1/school/{school_id}/course** - Return course(s). The courses are sorted by course number
+  * **GET /ws/v1/school/{school_id}/course/count** - Retrieve the number of courses in a school.
+  * **GET /ws/v1/school/{school_id}/section** - Search the school for sections matching the specified criteria. The sections are sorted by section_id, course_id and term_id.
+  * **GET /ws/v1/school/{school_id}/section/count** - Count the number of sections matching the specified criteria in a school.
+  * **GET /ws/v1/school/{school_id}/staff** - Search the school for staff. The results are limited to staff that have an active status. The staff is sorted by ID.
+  * **GET /ws/v1/school/{school_id}/staff/count** - Count staff in a school matching the query criteria
+  * **GET /ws/v1/school/{school_id}/student** - Students by school - matching the criteria
+  * **GET /ws/v1/school/{school_id}/student/count** - Count students in a school matching the query criteria
+  * **GET /ws/v1/school/{school_id}/term** - Search the school for terms matching the specified criteria. The terms are sorted by portion and start_date.
+  * **GET /ws/v1/school/{school_id}/term/count** - count terms matching the query criteria
+  * --------
+  * **Section Enrollment** - https://support.powerschool.com/developer/#/page/section-enrollment-resource
+  * **GET /ws/v1/section_enrollment/{id}**
+  * --------
+  * **Sections** - https://support.powerschool.com/developer/#/page/section-resources
+  * **GET /ws/v1/section/{id}** - Get sections by id
+  * **GET /ws/v1/section/{id}/section_enrollment** - Search the section for section enrollments matching the specified criteria. The section enrollments are sorted by student_id and entry_date.
+  * --------
+  * **Staff IDs** - https://support.powerschool.com/developer/#/page/staff-resource
+  * **GET /ws/v1/staff/{id}** - Return a staff by ID
+  * --------
+  * **Students By ID** - https://support.powerschool.com/developer/#/page/student-resources
+  * **GET /ws/v1/student/{id}** - return a student by dcid
+  * **GET /ws/v1/student/{id}/gpa** - return a student's gpa using the student dcid
+  * **POST /ws/v1/student** - update a student (why a post and not a put?) also see api data_dictionary for available fields to update: https://support.powerschool.com/developer/#/page/data-dictionary#student
+  * **GET /ws/v1/student/{student_id}/test** - get all matching student tests
+  * **POST /ws/v1/student/test** - update or insert student test details
+  * --------
+  * **Term Info** - https://support.powerschool.com/developer/#/page/term-resource
+  * **GET /ws/v1/term/{id}** - Return term info by ID
+  * --------
+  * **Test Subscription**
+  * **GET /ws/v1/test_subscription**
+  * --------
+  * **Get PowerSchool Date/Time** - https://support.powerschool.com/developer/#/page/time-resource
+  * **GET /ws/v1/time** - Return the current date, time and timestamp of the PowerSchool server. This resource does not require OAuth authentication.
+
+* **/ws/xte**
+
+* **GLOBAL INFO** - */ws/schema/* - PowerSchool Global information (tables, etc) - https://support.powerschool.com/developer/#/page/global-resources
+  * **GET /ws/schema/area** - Functional Areas
+  * -----
+  * **TABLES** - https://support.powerschool.com/developer/#/page/table-resources
+  * **GET /ws/schema/table** - Get All Tables
+  * **GET /ws/schema/table/{table_name}/{id}&projection={projection}** - projection -
+A comma-delimited list indicating the desired columns to be included in the api call. An asterisk * may be supplied to return all columns, but it is recommended to specify only necessary columns whenever possible.
+  * **POST /ws/schema/table/{table_name}** - Add Record to Database Extension Tables
+  * **PUT /ws/schema/table/{table_name}/{id}** - Update Record from Database Extension Tables
+  * **DELETE /ws/schema/table/{table_name}/{id}** - Delete Record from Database Extension Tables
+  * **GET /ws/schema/table/{table_name}/count?q={query_expression}** - Get Record Count from Database Tables
+  * **GET /ws/schema/table/{table_name}?q={query_expression}&page={page}&pagesize={pagesize}&projection={projection}** - Get Multiple Records from Database Tables
+  * -------
+  * **GET /ws/v1/metadata** - Get Global Metadata Info
+  * **GET /ws/schema/table/{tablename}/metadata** - Get Table Metadata
+  * **GET /ws/schema/area/{areaname}/table** - Get All Tables for Functional Areas
+  * ------
+  * **Guardian Info** - https://support.powerschool.com/developer/#/page/student-resources
+  * **POST /ws/schema/query/com.pearson.core.guardian.student_guardian_detail** - (why a post and not a get?) Return all guardian records that satisfy the specified criteria.
+  * **POST /ws/schema/query/com.pearson.core.guardian.student_guardian_detail/count** - count matching guardian records
+  * -------
+  * **Student DCID to Student_id map
+  * **POST /ws/schema/query/com.pearson.core.student.student_dcid_id_map** -
+
+* **PowerQuery Access List Info** - */ws/powerqueryaccesslist/* - https://support.powerschool.com/developer/#/page/global-resources
+  * **GET /ws/powerqueryaccesslist/** - Get All PowerQueries Access List - List of all fields access by all trusted PowerQueries, formatted as view-only access requests. Includes all fields that are not blacklisted or are whitelisted
+  * **GET /ws/powerqueryaccesslist/{QueryName}** - List of all fields access by the named PowerQuery, formatted as view-only access requests. Includes all fields that are not blacklisted or are whitelisted
+
+* **PowerTeacher and Assignments** - */powerschool-ptg-api/v2/* - https://support.powerschool.com/developer/#/page/assignment-resources
+  * **Assigments** - https://support.powerschool.com/developer/#/page/assignment-resources
+  * **GET /powerschool-ptg-api/v2/assignment/{id}** - get all details for an assignment
+  * **PUT /powerschool-ptg-api/v2/assignment/{id}** -
+  * **POST /powerschool-ptg-api/v2/section/{id}/assignment** - add assignments
+  * -------
+  * **GET /powerschool-ptg-api/v2/translate/{entity}/{source_product}/{source_col}/{target_product}/{target_col}?values=** - https://support.powerschool.com/developer/#/page/translate-resource - Translate one or more identifiers for one entity into the identifiers of another entity.
+
 
 ## Development
 
