@@ -74,6 +74,7 @@ module PsUtilities
       retries = 3
       ps_url  = base_uri + api_path
       options = options.merge(headers)
+      pp options
       begin
         HTTParty.send(verb, ps_url, options)
       rescue Net::ReadTimeout, Net::OpenTimeout

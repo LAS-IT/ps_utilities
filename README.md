@@ -24,20 +24,23 @@ Or install it yourself as:
 
 ## ToDo
 
-- add docs
+- add gen docs
 - add example code
 - account creation?
 - account updates?
 - web mock and more tests
-- add additional prebuilt commands
-- recursion when retrieving all kids?
+- add additional prebuilt commands? - which - new student?
 - contact others interested in PS API for collaboration
 
 ## Change Log
 
-* **v0.2.2** - 2018-06-??
-  - update / improve code docs
-* **v0.2.1** - 2018-06-21 --
+* **v0.3.1** - 2018-06-22 -- not compatible with v0.2.0 (prebuilt commands)
+  - improve tests
+  - improve online gem docs
+* **v0.3.0** - 2018-06-22 -- not compatible with v0.2.0 (prebuilt commands)
+  - heavily refactored - recursively gets all students
+  - updated / improved readme - with common api info (all collected into one spot)
+* **v0.2.1** - 2018-06-21
   - internal refactoring - pushed accidentally before writing docs - oops
 * **v0.2.0** - 2018-06-21 - not compatible with v0.1.0
   - update api - using api_path for clarity
@@ -180,10 +183,10 @@ HTTParty.post( "#{base_uri}/oauth/access_token",
 * **=le=** - less than or equal to
 * **==**   - equal to
 ```
-Join query criteria with ";" 
+Join query criteria with ";"
 
 # EXAMPLE QUERY
-/ws/v1/district/student/count?q=school_enrollment.enroll_status==A;school_enrollment.entry_date=gt=2017-08-01
+/ws/v1/district/student/count?q=school_enrollment.enroll_status==A;name.last_name==JA*
 ```
 
 ### Large Query Options - PAGINATION - https://support.powerschool.com/developer/#/page/pagination
