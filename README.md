@@ -151,6 +151,9 @@ one      = ps.run(command: :get_one_student_record, params: params )
 ```
 
 ## PowerSchool API Notes
+
+A collection of hard to find examples and needed info scattered over many locations
+
 [PS_API_NOTES.md](PS_API_NOTES.md)
 
 

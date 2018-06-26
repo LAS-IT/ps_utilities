@@ -66,14 +66,13 @@ module PsUtilities
     end
 
     # verb = :delete, :get, :patch, :post, :put
-    # options = {query: {}, body: {}}
-    # get usually needs a query info
-    # put usually needs a body with data
+    # options = {query: {}, body: {}} - get uses :query, put and post use :body
     def api(verb, api_path, options={})
       count   = 0
       retries = 3
       ps_url  = base_uri + api_path
       options = options.merge(headers)
+      pp ps_url
       pp options
       begin
         HTTParty.send(verb, ps_url, options)
@@ -85,6 +84,14 @@ module PsUtilities
           { error: "no response (timeout) from URL: #{url}"  }
         end
       end
+    end
+
+    def header_defaults
+      { headers:
+        { 'User-Agent' => "PsUtilities - #{version}",
+          'Accept' => 'application/json',
+          'Content-Type' => 'application/json'}
+      }
     end
 
     # In PowerSchool go to System>System Settings>Plugin Management Configuration>your plugin>Data Provider Configuration to manually check plugin expiration date
@@ -130,14 +137,6 @@ module PsUtilities
         auth_endpoint:  ENV['PS_AUTH_ENDPOINT'] || '/oauth/access_token',
         client_id:      ENV['PS_CLIENT_ID'],
         client_secret:  ENV['PS_CLIENT_SECRET'],
-      }
-    end
-
-    def header_defaults
-      { headers:
-        { 'User-Agent' => "PsUtilitiesGem - v#{PsUtilities::Version::VERSION}",
-          'Accept' => 'application/json',
-          'Content-Type' => 'application/json'}
       }
     end
 

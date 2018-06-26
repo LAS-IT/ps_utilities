@@ -17,7 +17,7 @@ HTTParty.post( "#{base_uri}/oauth/access_token",
 ### Headers after Authentication
 ```
 {:headers=>
-  { "User-Agent"=>"PsUtilitiesGem - v0.2.2",
+  { "User-Agent"=>"PsUtilities - v0.3.1",
     "Accept"=>"application/json",
     "Content-Type"=>"application/json",
     "Authorization"=>"Bearer #{authorized_token}"
@@ -91,9 +91,9 @@ https://example.com/ws/v1/district/student?expansions=phones,addresses
 
 ### INDIVIDUAL Student - /ws/v1/student
 * **Students By ID** - https://support.powerschool.com/developer/#/page/student-resources
+* **POST /ws/v1/student** - update a student (why a post and not a put?) also see api data_dictionary for available fields to update: https://support.powerschool.com/developer/#/page/data-dictionary#student
 * **GET /ws/v1/student/{id}** - return a student by dcid
 * **GET /ws/v1/student/{id}/gpa** - return a student's gpa using the student dcid
-* **POST /ws/v1/student** - update a student (why a post and not a put?) also see api data_dictionary for available fields to update: https://support.powerschool.com/developer/#/page/data-dictionary#student
 * **GET /ws/v1/student/{student_id}/test** - get all matching student tests
 * **POST /ws/v1/student/test** - update or insert student test details
 
@@ -103,7 +103,31 @@ https://example.com/ws/v1/district/student?expansions=phones,addresses
 Resource extensions are resources that extend core resources. They can be defined by the system, the installed state package, or by user-created extensions. They are based on PowerSchool schema extensions. They behave like, and are requested like, extensions. Each resource with extensions will publish them in the default result using the @extensions attribute. Zero to many elements can be selected. Unknown extension requests are ignored. If the resource is writable, such as Student, then the user-defined extensions to that resource are also writable.
 ```
 # separate multiple requests with a comma!
+curl -X GET -H "Content-Type: application/json" \
+-H "Authorization: Bearer 88888888-7777-4444-bbbb-999999993333" \
 https://powerschool.com/ws/v1/student/2?extensions=studentcorefields,c_studentlocator
+# return:
+#{"student"=>
+#  {"@expansions"=>
+    "demographics, addresses, alerts, phones, school_enrollment, ethnicity_race, contact, contact_info, initial_enrollment, schedule_setup, fees, lunch",
+#   "@extensions"=>
+#    "s_stu_crdc_x,activities,c_studentlocator,u_students_extension,u_studentsuserfields,s_stu_ncea_x,s_stu_edfi_x,studentcorefields",
+#   "_extension_data"=>
+#    {"_table_extension"=>
+#      {"recordFound"=>false,
+#       "_field"=>
+#        [{"name"=>"transcriptaddrzip", "type"=>"String", "value"=>"050010"},
+#         {"name"=>"grad_day_date_year", "type"=>"String", "value"=>"June 2018"},
+#         {"name"=>"transcriptaddrcountry", "type"=>"String", "value"=>"Swizterland"},
+#         {"name"=>"transcriptaddrcity", "type"=>"String", "value"=>"Almaty"},
+#         {"name"=>"father_name", "type"=>"String", "value"=>"Zzzzzzzzz, Yyyyyyyy"},
+#         {"name"=>"transcriptaddrline1", "type"=>"String", "value"=>"Dddddd  Str 11 app 22"},
+#         {"name"=>"transcriptaddrline2", "type"=>"String", "value"=>"LAS"}],
+#       "name"=>"u_studentsuserfields"}},
+#   "id"=>5011,
+#   "local_id"=>112036,
+#   "student_username"=>"zzzzzzz036",
+#   "name"=>{"first_name"=>"Tttttttt", "last_name"=>"Zzzzzzzzzz"}}}
 ```
 
 **SAMPLE POST** (student record Updates)
@@ -111,30 +135,38 @@ https://powerschool.com/ws/v1/student/2?extensions=studentcorefields,c_studentlo
 *CLARIFY what client_uid is!!*
 **NOTE how objects - like name are entered**
 ```
+# how to post json
+curl -X POST -H "Content-Type: application/json" \
+-H "Authorization: Bearer 88888888-7777-4444-bbbb-999999993333" \
+-d @../data/kids_file.json https://school.powerschool.com/ws/v1/student
+
+you can post a little blob of geojson, like so:
+curl -X POST -H "Content-Type: application/json" \
+-H "Authorization: Bearer 88888888-7777-4444-bbbb-999999993333" \
+-d '{"students":{"student":[{"client_uid":"124","action":"UPDATE","id":"442","name":{"first_name":"Aaronia","last_name":"Stephaniia"}},{"client_uid":"1245","action":"UPDATE","id":"443","name":{"first_name":"Chauncey","last_name":"McTavish"}}]}}' https://school.powerschool.com/ws/v1/student/
+# nicely formatted it looks like:
 body: {
-   "students":{
-      "student":[
-         {
-            "client_uid":"124",
-            "action":"UPDATE",
-            "id":"442",
-            "name":{
-               "first_name":"Aaronia",
-               "last_name":"Stephaniia"
+   students: {
+      student:[
+         {  client_uid: "124",
+            action: "UPDATE",
+            id: "442",
+            name: {
+               first_name: "Aaronia",
+               last_name: "Stephaniia"
             },
          },
-         {
-            "client_uid":"1245",
-            "action":"UPDATE",
-            "id":"443",
-            "name":{
-               "first_name":"Chauncey",
-               "last_name":"McTavish"
+         {  :client_uid: "1245",
+            action: "UPDATE",
+            id: "443",
+            name: {
+               first_name: "Chauncey",
+               last_name: "McTavish"
             }
          }
       ]
    }
-}
+}.to_json
 
 ```
 

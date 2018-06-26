@@ -33,22 +33,41 @@ module PsUtilities
     #   ]
     # }
 
+    # params = {dcid: "xxxxxxx"} or {id: "12345"}
+    def get_student(params)
+      # api_path = "/ws/v1/district/student/{dcid}?expansions=school_enrollment,contact&q=student_username==xxxxxx237"
+      ps_dcid    = params[:dcid] || params[:dc_id] || params[:id]
+      api_path   = "/ws/v1/student/#{ps_dcid.to_i}"
+      options    = { query:
+                      { "extensions" => "s_stu_crdc_x,activities,c_studentlocator,u_students_extension,u_studentsuserfields,s_stu_ncea_x,s_stu_edfi_x,studentcorefields",
+                        "expansions" => "demographics,addresses,alerts,phones,school_enrollment,ethnicity_race,contact,contact_info,initial_enrollment,schedule_setup,fees,lunch"
+                      }
+                    }
+      return {"errorMessage"=>{"message"=>"A valid dcid must be entered."}} if "#{ps_dcid.to_i}".eql? "0"
+
+      answer = api(:get, api_path, options)
+      { student: (answer["student"] || []) }
+    end
+
     # params = {username: "xxxxxxx"} or {local_id: "12345"}
-    def get_one_student(params)
+    def find_student(params)
       # api_path = "/ws/v1/district/student?expansions=school_enrollment,contact&q=student_username==xxxxxx237"
       api_path   = "/ws/v1/district/student"
-      options    = {query:
-                    {"expansions" => "school_enrollment,contact,contact_info"}}
+      options    = { query:
+                    {"expansions" => "contact,contact_info,phones"}}
       query  = []
       query << "student_username==#{params[:username]}"  if params.has_key?(:username)
       query << "local_id==#{params[:local_id]}"          if params.has_key?(:local_id)
 
       options[:query]["q"] = query.join(";")
+      pp options
       return {"errorMessage"=>{"message"=>"A valid parameter must be entered."}} if query.empty?
 
       answer = api(:get, api_path, options)
       { student: (answer.dig("students","student") || []) }
     end
+    alias_method :find_student_by_local_id, :find_student
+    alias_method :find_student_by_username, :find_student
     # {student:
     #   {"id"=>5023,
     #    "local_id"=>112193,
