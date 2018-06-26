@@ -24,13 +24,11 @@ Or install it yourself as:
 
 ## ToDo
 
-- add gen docs
+- add gem api docs
 - add example code
-- account creation?
-- account updates?
 - web mock and more tests
-- add additional prebuilt commands? - which - new student?
-- contact others interested in PS API for collaboration
+- add db extensions as a user module?
+- add additional prebuilt commands put?
 
 ## Change Log
 
