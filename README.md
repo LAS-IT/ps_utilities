@@ -34,9 +34,12 @@ Or install it yourself as:
 
 ## Change Log
 
-* **v0.3.1** - 2018-06-22 -- not compatible with v0.2.0 (prebuilt commands)
+* **v0.3.2** - 2018-06-??
   - improve tests
   - improve online gem docs
+* **v0.3.1** - 2018-06-26 -- compatible with v0.3.0
+  - added pre-built student create and update as POST - basic fields default
+  - Can update db extensions (for las - not yet elegant or generalized, but how to is documented in the code)
 * **v0.3.0** - 2018-06-22 -- not compatible with v0.2.0 (prebuilt commands)
   - heavily refactored - recursively gets all students
   - updated / improved readme - with common api info (all collected into one spot)
