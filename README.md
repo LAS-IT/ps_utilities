@@ -27,8 +27,11 @@ Or install it yourself as:
 - add gem api docs
 - add example code
 - web mock and more tests
-- add db extensions as a user module?
-- add additional prebuilt commands put?
+- Student Creation (missing for LAS)
+  - add LDAP enabled
+  - add parent web_id
+  - add parent web_password
+- add db extensions as an extendable user module?
 
 ## Change Log
 
