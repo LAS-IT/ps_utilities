@@ -2,18 +2,20 @@ module PsUtilities
 
   module PreBuiltPost
 
-    # params[:students] (Array of Hashes) - kids with their attributes
-    # params = {dcid: 7531, student_id: 23456}
-    # or
-    # params = { [ {dcid: 7531, student_id: 23456},
-    #               {dcid: 9753, student_id: 65432} ] }
-    def create_students(params)
-      action   = "INSERT"
-      kids_api_array = build_kids_api_array(action, params)
-      options  = { body: { students: { student: kids_api_array } }.to_json }
-      answer = api(:post, "/ws/v1/student", options)
-    end
-    alias_method :create_student, :create_students
+    # this method CREATES or INSERTS a new student into PowerSchool
+    # @param params (Array of Hashes) - kids with their attributes
+    # example student entry
+    # @param params: { student: {dcid: 7531, student_id: 23456, email: "kid@las.ch"} }
+    # or multiple students (with ps and your school's database extensions)
+    # @param params: { students:
+    #   [ { dcid: 9753, student_id: 65432 },
+    #     { dcid: 7531, student_id: 23456, email: "kid@las.ch",
+    #       u_studentsuserfields: {transcriptaddrcity: "Bex"},
+    #       u_students_extension: {preferredname: "Joe"}
+    #     }
+    #   ]
+    # }
+    # @return [Hash]
     # { "results": {
     #     "update_count": 2
     #     "result": [
@@ -28,8 +30,16 @@ module PsUtilities
     #     ]
     #   }
     # }
+    def create_students(params)
+      action   = "INSERT"
+      kids_api_array = build_kids_api_array(action, params)
+      options  = { body: { students: { student: kids_api_array } }.to_json }
+      answer = api(:post, "/ws/v1/student", options)
+    end
+    alias_method :create_student, :create_students
 
-    # params[:students] (Array of Hashes) - kids with their attributes
+    # this updates and existing student record within PowerSchool
+    # (see #create_students)
     def update_students(params)
       pp "update students"
       pp params
@@ -41,21 +51,39 @@ module PsUtilities
       answer = api(:post, "/ws/v1/student", options)
     end
     alias_method :update_student, :update_students
-    # { "results": {
-    #     "update_count": 2
-    #     "result": [
-    #       {  "client_uid": 124,
-    #          "status": "SUCCESS",
-    #          "action": "INSERT",
-    #          "success_message" :{
-    #            "id": 442,
-    #            "ref": "https://server/ws/v1/student/442" }
-    #        },
-    #        { ... }
+
+    # @param action [String] - either "INSERT" or "UPDATE"
+    # @param params [Array of Hashes] - in this format -- students: [{kid_1_info}, {kid_2_info}]
+    # @return [Array of Hashes] - with data like below:
+    #[ {:action=>"UPDATE",
+    #   :id=>7337,
+    #   :client_uid=>"555807",
+    #   :contact_info=>{:email=>"bassjoe@las.ch"},
+    #   "_extension_data"=> {
+    #     "_table_extension"=>  [
+    #       { "recordFound"=>false,
+    #         "name"=>"u_students_extension",
+    #         "_field"=> [
+    #           {"name"=>"preferredname", "type"=>"String", "value"=>"Joe"},
+    #           {"name"=>"student_email", "type"=>"String", "value"=>"bassjoe@las.ch"}
+    #         ]
+    #       },
+    #       { "recordFound"=>false,
+    #         "name"=>"u_studentsuserfields",
+    #         "_field"=> [
+    #           {"name"=>"transcriptaddrline1", "type"=>"String", "value"=>"LAS"},
+    #           {"name"=>"transcriptaddrline2", "type"=>"String", "value"=>"CP 108"},
+    #           {"name"=>"transcriptaddrcity", "type"=>"String", "value"=>"Leysin"},
+    #           {"name"=>"transcriptaddrzip", "type"=>"String", "value"=>"1854"},
+    #           {"name"=>"transcriptaddrstate", "type"=>"String", "value"=>"Vaud"},
+    #           {"name"=>"transcriptaddrcountry", "type"=>"String", "value"=>"CH"}
+    #         ]
+    #       }
     #     ]
     #   }
-    # }
-
+    #   { ...another_student_data... },
+    #]
+    # @note this is then sent to the API call with a body tag
     def build_kids_api_array(action, params)
       pp "build_kids_api_array"
       pp params
@@ -73,6 +101,78 @@ module PsUtilities
       return api_array
     end
 
+    # prepare data to update student database extensions
+    # @param data [Hash] - with the format: {u_students_extension: {field1: data1, field2: data2}}
+    # @return [Hash] - with data like below:
+    # { "name"=>"u_students_extension",
+    #   "recordFound"=>false,
+    #   "_field"=> [
+    #     {"name"=>"preferredname", "type"=>"String", "value"=>"Joe"},
+    #     {"name"=>"student_email", "type"=>"String", "value"=>"joe@las.ch"},
+    #   ]
+    # }
+    def u_students_extension(data)
+      db_extensions = { "name"=>"u_students_extension", "recordFound"=>false,
+                        "_field"=> [] }
+      data.each do |key, value|
+        db_extensions["_field"] << {"name"=>"#{key}", "type"=>"String", "value"=>"#{value}"}
+      end
+      db_extensions
+    end
+
+    # prepare data to built-in database extensions
+    # @param data [Hash] - with the format: {u_studentsuserfields: {field1: data1, field2: data2}}
+    # @return [Hash] - with data like below:
+    # { "name"=>"u_students_extension",
+    #   "recordFound"=>false,
+    #   "_field"=> [
+    #     {"name"=>"transcriptaddrzip", "type"=>"String", "value"=>75230},
+    #     {"name"=>"transcriptaddrcountry", "type"=>"String", "value"=>"United States"},
+    #     {"name"=>"transcriptaddrcity", "type"=>"String", "value"=>"dallas"},
+    #     {"name"=>"transcriptaddrstate", "type"=>"String", "value"=>"Texas"},
+    #     {"name"=>"transcriptaddrline1", "type"=>"String", "value"=>"6138 meadow rd"}
+    #   ]
+    # }
+    def u_studentsuserfields(data)
+      db_extensions = { "name"=>"u_studentsuserfields", "recordFound"=>false,
+                        "_field"=> [] }
+      data.each do |key, value|
+        db_extensions["_field"] << {"name"=>"#{key}", "type"=>"String", "value"=>"#{value}"}
+      end
+      db_extensions
+    end
+
+    # prepare an indivdual's attributes to be sent to PowerSchool
+    # @param action [String, "UPDATE" or "INSERT"] - handles what powerschool should do
+    # @param kid [Hash] - one kid's attributes within a hash
+    # @return [Hash] - returns data in the below format:
+    # Data structure to send to API (with built-in PS extensions)
+    # { :action=>"UPDATE",
+    #   :id=>7337,
+    #   :client_uid=>"555807",
+    #   :contact_info=>{:email=>"bassjoe@las.ch"},
+    #   "_extension_data"=> {
+    #     "_table_extension"=>  [
+    #       { "recordFound"=>false,
+    #         "name"=>"u_students_extension",
+    #         "_field"=> [
+    #           {"name"=>"preferredname", "type"=>"String", "value"=>"Joe"},
+    #           {"name"=>"student_email", "type"=>"String", "value"=>"bassjoe@las.ch"}
+    #         ]
+    #       },
+    #       { "recordFound"=>false,
+    #         "name"=>"u_studentsuserfields",
+    #         "_field"=> [
+    #           {"name"=>"transcriptaddrline1", "type"=>"String", "value"=>"LAS"},
+    #           {"name"=>"transcriptaddrline2", "type"=>"String", "value"=>"CP 108"},
+    #           {"name"=>"transcriptaddrcity", "type"=>"String", "value"=>"Leysin"},
+    #           {"name"=>"transcriptaddrzip", "type"=>"String", "value"=>"1854"},
+    #           {"name"=>"transcriptaddrstate", "type"=>"String", "value"=>"Vaud"},
+    #           {"name"=>"transcriptaddrcountry", "type"=>"String", "value"=>"CH"}
+    #         ]
+    #       }
+    #     ]
+    #   }
     def build_kid_attributes(action, kid)
       pp "build_kid_attributes"
       pp kid
@@ -177,11 +277,6 @@ module PsUtilities
 
       # Update LAS Database Extensions as needed
       attribs["_extension_data"] = { "_table_extension" => [] }
-      if kid[:transcriptaddrline1] or kid[:transcriptaddrline2] or
-            kid[:transcriptaddrcity] or kid[:transcriptaddrstate] or
-            kid[:transcriptaddrzip]  or kid[:transcriptaddrcountry]
-        attribs["_extension_data"]["_table_extension"] << transcript_address(kid)
-      end
       # built-in extensions by PowerSchool
       attribs["_extension_data"]["_table_extension"] << u_studentsuserfields(kid[:u_studentsuserfields])
       # school defined database extensions
@@ -191,117 +286,10 @@ module PsUtilities
 
       # remove, nils, empty strings and empty hashes
       answer = attribs.reject { |k,v| v.nil? || v.to_s.empty? || v.to_s.eql?("{}")}
-      pp "kid-attributes"
-      pp answer
+      # pp "kid-attributes"
+      # pp answer
       return answer
     end
-    # Data structure to send to API (with built-in PS extensions)
-    # { :action=>"UPDATE",
-    #   :id=>7337,
-    #   :client_uid=>"555807",
-    #   :contact_info=>{:email=>"bassjoe@las.ch"},
-    #   "_extension_data"=> {
-    #     "_table_extension"=>  [
-    #       { "recordFound"=>false,
-    #         "name"=>"u_students_extension",
-    #         "_field"=> [
-    #           {"name"=>"preferredname", "type"=>"String", "value"=>"Joe"},
-    #           {"name"=>"student_email", "type"=>"String", "value"=>"bassjoe@las.ch"}
-    #         ]
-    #       },
-    #       { "recordFound"=>false,
-    #         "name"=>"u_studentsuserfields",
-    #         "_field"=> [
-    #           {"name"=>"transcriptaddrline1", "type"=>"String", "value"=>"LAS"},
-    #           {"name"=>"transcriptaddrline2", "type"=>"String", "value"=>"CP 108"},
-    #           {"name"=>"transcriptaddrcity", "type"=>"String", "value"=>"Leysin"},
-    #           {"name"=>"transcriptaddrzip", "type"=>"String", "value"=>"1854"},
-    #           {"name"=>"transcriptaddrstate", "type"=>"String", "value"=>"Vaud"},
-    #           {"name"=>"transcriptaddrcountry", "type"=>"String", "value"=>"CH"}
-    #         ]
-    #       }
-    #     ]
-    #   }
-
-    def transcript_address(kid)
-      pp "transcript_address"
-      pp kid
-      db_extensions = { "name"=>"u_studentsuserfields", "recordFound"=>false,
-                        "_field"=> [] }
-      if kid[:transcriptaddrline1]
-        db_extensions["_field"] << {"name"=>"transcriptaddrline1", "type"=>"String", "value"=>"#{kid[:transcriptaddrline1]}"}
-      end
-      if kid[:transcriptaddrline2]
-        db_extensions["_field"] << {"name"=>"transcriptaddrline2", "type"=>"String", "value"=>"#{kid[:transcriptaddrline2]}"}
-      end
-      if kid[:transcriptaddrcity]
-        db_extensions["_field"] << {"name"=>"transcriptaddrcity", "type"=>"String", "value"=>"#{kid[:transcriptaddrcity]}"}
-      end
-      if kid[:transcriptaddrzip]
-        db_extensions["_field"] << {"name"=>"transcriptaddrzip", "type"=>"String", "value"=>"#{kid[:transcriptaddrzip]}"}
-      end
-      if kid[:transcriptaddrstate]
-        db_extensions["_field"] << {"name"=>"transcriptaddrstate", "type"=>"String", "value"=>"#{kid[:transcriptaddrstate]}"}
-      end
-      if kid[:transcriptaddrcountry]
-        db_extensions["_field"] << {"name"=>"transcriptaddrcountry", "type"=>"String", "value"=>"#{kid[:transcriptaddrcountry]}"}
-      end
-      db_extensions
-    end
-    # { "recordFound"=>false,
-    #   "name"=>"u_studentsuserfields",
-    #   "_field"=> [
-    #     {"name"=>"transcriptaddrzip", "type"=>"String", "value"=>75230},
-    #     {"name"=>"transcriptaddrcountry", "type"=>"String", "value"=>"United States"},
-    #     {"name"=>"transcriptaddrcity", "type"=>"String", "value"=>"dallas"},
-    #     {"name"=>"transcriptaddrstate", "type"=>"String", "value"=>"Texas"},
-    #     {"name"=>"transcriptaddrline1", "type"=>"String", "value"=>"6138 meadow rd"}
-    #   ]
-    # }
-    # end
-
-    def u_students_extension(data)
-
-      pp "u_students_extension"
-      pp data
-
-      db_extensions = { "name"=>"u_students_extension", "recordFound"=>false,
-                        "_field"=> [] }
-      data.each do |key, value|
-        pp "key"
-        pp key
-        pp "value"
-        pp value
-        db_extensions["_field"] << {"name"=>"#{key}", "type"=>"String", "value"=>"#{value}"}
-      end
-      db_extensions
-    end
-    # { "name"=>"u_students_extension",
-    #   "recordFound"=>false,
-    #   "_field"=> [
-    #     {"name"=>"preferredname", "type"=>"String", "value"=>"Joe"},
-    #     {"name"=>"student_email", "type"=>"String", "value"=>"joe@las.ch"},
-    #   ]
-    # }
-
-    def u_studentsuserfields(data)
-      db_extensions = { "name"=>"u_studentsuserfields", "recordFound"=>false,
-                        "_field"=> [] }
-      data.each do |key, value|
-        db_extensions["_field"] << {"name"=>"#{key}", "type"=>"String", "value"=>"#{value}"}
-      end
-      db_extensions
-    end
-    # { "name"=>"u_students_extension",
-    #   "recordFound"=>false,
-    #   "_field"=> [
-    #     {"name"=>"transcriptaddrzip", "type"=>"String", "value"=>75230},
-    #     {"name"=>"transcriptaddrcountry", "type"=>"String", "value"=>"United States"},
-    #     {"name"=>"transcriptaddrcity", "type"=>"String", "value"=>"dallas"},
-    #     {"name"=>"transcriptaddrstate", "type"=>"String", "value"=>"Texas"},
-    #     {"name"=>"transcriptaddrline1", "type"=>"String", "value"=>"6138 meadow rd"}
-    #   ]
-    # }
 
   end
 

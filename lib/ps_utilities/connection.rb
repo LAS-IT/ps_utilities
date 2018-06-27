@@ -2,9 +2,9 @@ require 'openssl'
 require 'base64'
 require 'json'
 require 'httparty'
-require 'ps_utilities/pre_built_get'
-require 'ps_utilities/pre_built_put'
-require 'ps_utilities/pre_built_post'
+require 'ps_utilities/pre_built_student_get'
+require 'ps_utilities/pre_built_student_put'
+require 'ps_utilities/pre_built_student_post'
 
 # http://blog.honeybadger.io/ruby-custom-exceptions/
 class AuthError < RuntimeError
@@ -21,16 +21,20 @@ module PsUtilities
   # The PsUtilities, makes it east to work with the Powerschool API
   # @since 0.1.0
   #
-  # @note You should use environment variables to initialize your server.
+
   class Connection
 
-    attr_reader :credentials, :headers, :base_uri, :auth_path, :auth_token
+    attr_reader :credentials, :headers, :base_uri
+    attr_reader :auth_path, :auth_token
     attr_reader :version
 
-    include PsUtilities::PreBuiltGet
-    include PsUtilities::PreBuiltPut
-    include PsUtilities::PreBuiltPost
+    include PsUtilities::PreBuiltStudentGet
+    include PsUtilities::PreBuiltStudentPut
+    include PsUtilities::PreBuiltStudentPost
 
+    # @param attributes: [Hash] -  options include: { base_uri: ENV['PS_URL'], auth_endpoint: (ENV['PS_AUTH_ENDPOINT'] || '/oauth/access_token'), client_id: ENV['PS_CLIENT_ID'], client_secret: ENV['PS_CLIENT_SECRET'] }
+    # @param headers: [Hash] - allows to change from json to xml (only do this if you are doing direct api calls and not using pre-built calls) returns and use a different useragent: { 'User-Agent' => "PsUtilities - #{version}", 'Accept' => 'application/json', 'Content-Type' => 'application/json'}
+    # @note preference is to use environment variables to initialize your server.
     def initialize(attributes: {}, headers: {})
       @version     = "v#{PsUtilities::Version::VERSION}"
       @credentials = attr_defaults.merge(attributes)
@@ -46,7 +50,12 @@ module PsUtilities
                                                       credentials[:base_uri].empty?
     end
 
-    # with no command it just checks authenticates if needed
+    # this runs the various options:
+    # @param command: [Symbol] - commands include direct api calls: :authenticate, :delete, :get, :patch, :post, :put (these require api_path: and options: params) & also pre-built commands - see included methods (they require params:)
+    # @param api_path: [String] - this is the api_endpoint (only needed for direct api calls)
+    # @param options: [Hash] - this is the data body or the query options (needed for direct api calls)
+    # @param params: [Hash] - this is the data needed for using pre-built commands - see the individual command for details
+    # @note with no command an authenticatation check is done
     def run(command: nil, api_path: "", options: {}, params: {})
       authenticate   unless token_valid?
       @headers[:headers].merge!('Authorization' => 'Bearer ' + authorized_token)
