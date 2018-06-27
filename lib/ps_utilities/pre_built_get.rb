@@ -6,9 +6,11 @@ module PsUtilities
     # @param params [Hash] - ignored - only included for the api standard
     # @return - (see #get_all_matching_students)
     def get_all_active_students(params={})
-      params[:status_code] = 0
+      params = {status_code: 0}
+      # params[:status_code] = 0
       get_all_matching_students(params)
     end
+    alias_method :all_active_students, :get_all_active_students
 
     # return all students within the district matching the filters are passed in -- this is a Recursive search and will collect all students
     # @param params [Hash] - enter a match criteria in the following format (* are allowed for wildcard matching):
@@ -40,6 +42,7 @@ module PsUtilities
       # return answer
       { students: students.flatten }
     end
+    alias_method :all_matching_students, :get_all_matching_students
 
     # retrieves all individual student's details - you must use the DCID !!!
     # @param params [Hash] - use either: {dcid: "12345"} or {id: "12345"}
@@ -98,7 +101,7 @@ module PsUtilities
     #   }
     # }
     # @note the data within "u_students_extension" - is unique for each school
-    def get_student(params)
+    def get_one_student(params)
       # api_path = "/ws/v1/district/student/{dcid}?expansions=school_enrollment,contact&q=student_username==xxxxxx237"
       ps_dcid    = params[:dcid] || params[:dc_id] || params[:id]
       api_path   = "/ws/v1/student/#{ps_dcid.to_i}"
@@ -112,11 +115,12 @@ module PsUtilities
       answer = api(:get, api_path, options)
       { student: (answer["student"] || []) }
     end
+    alias_method :get_student, :get_one_student
 
-    # find a student within the district by username, student_id (local_id), id (dcid) - this is NOT a recursive search - when many kids match
+    # find a student within the district by username:, student_id: (local_id), id: (dcid) - this is NOT a recursive search - when many kids match
     # @param params [Hash] - must be one of the following (* are allowed for wildcard matching): {username: "xxxxx*"} or {student_id: "12345"} or {local_id: "12345"} or {dcid: "654321"} or {id: "654321"}
     # @return [Hash] - with the following format:
-    # {:student=>
+    # {:students => [
     #   {"id"=>7337,
     #    "local_id"=>555807,
     #    "student_username"=>"bassivm807",
@@ -142,108 +146,61 @@ module PsUtilities
     #    "schedule_setup"=>{"next_school"=>33, "sched_next_year_grade"=>10},
     #    "fees"=>"",
     #    "lunch"=>{"balance_1"=>"0.00", "balance_2"=>"0.00", "balance_3"=>"0.00", "balance_4"=>"0.00", "lunch_id"=>0}
-    #   }
+    #   },
+    #   { ... }
+    #  ]
     # }
     # @note - this lookup will not include data from database extensions
-    def find_student(params)
-      # api_path = "/ws/v1/district/student?expansions=school_enrollment,contact&q=student_username==xxxxxx237"
-      api_path   = "/ws/v1/district/student"
-      options    = { query: {"expansions" => "demographics,addresses,alerts,phones,school_enrollment,ethnicity_race,contact,contact_info,initial_enrollment,schedule_setup,fees,lunch"} }
-      query  = []
-      query << "local_id==#{params[:student_id]}"        if params.has_key?(:student_id)
-      query << "local_id==#{params[:local_id]}"          if params.has_key?(:local_id)
-      query << "student_username==#{params[:username]}"  if params.has_key?(:username)
-      query << "id==#{params[:dcid]}"                    if params.has_key?(:dcid)
-      query << "id==#{params[:id]}"                      if params.has_key?(:id)
-
-      options[:query]["q"] = query.join(";")
-      pp options
-      return {"errorMessage"=>{"message"=>"A valid parameter must be entered."}} if query.empty?
-
-      answer = api(:get, api_path, options)
-      { student: (answer.dig("students","student") || []) }
-    end
-    alias_method :find_student_by_local_id, :find_student
-    alias_method :find_student_by_username, :find_student
-    # {student:
-    #   {"id"=>5023,
-    #    "local_id"=>112193,
-    #    "student_username"=>"xxxxxxx193",
-    #    "name"=>{"first_name"=>"Aaaaaaaaa", "last_name"=>"EEEEEEEEE"},
-    #    "school_enrollment"=>
-    #      {"enroll_status"=>"A",
-    #       "enroll_status_description"=>"Active",
-    #       "enroll_status_code"=>0,
-    #       "grade_level"=>12,
-    #       "entry_date"=>"2017-08-25",
-    #       "exit_date"=>"2018-06-09",
-    #       "school_number"=>33,
-    #       "school_id"=>6,
-    #       "entry_comment"=>"Promote Same School",
-    #       "full_time_equivalency"=>{"fteid"=>1070, "name"=>"FTE Value: 1"}
-    #      },
-    #    "contact"=>
-    #       {"guardian_email"=>"parent1@example.fr,parent2@example.ch", "mother"=>"EEEEEEE, Vvvvv", "father"=>"EEEEEEEE, Sssssss"},
-    #    "contact_info"=>{"email"=>"xxxxxxx193@xxxx.de"}
-    #   }
-    # }
+    # def find_students(params)
+    #   # api_path = "/ws/v1/district/student?expansions=school_enrollment,contact&q=student_username==xxxxxx237"
+    #   api_path   = "/ws/v1/district/student"
+    #
+    #   options    = { query: {"expansions" => "demographics,addresses,alerts,phones,school_enrollment,ethnicity_race,contact,contact_info,initial_enrollment,schedule_setup,fees,lunch"} }
+    #   query      = build_query(params)
+    #   options[:query]["q"] = query.join(";")
+    #   return {"errorMessage"=>{"message"=>"A valid parameter must be entered."}} if query.empty?
+    #
+    #   answer = api(:get, api_path, options)
+    #   { students: (answer.dig("students","student") || []) }
+    # end
+    # alias_method :find_student, :find_students
+    # alias_method :find_student_by_local_id, :find_students
+    # alias_method :find_student_by_username, :find_students
 
     private
-    # given page_size = 100
-    # 430 kids = 5 pages
-    # 400 kids = 4 pages
+
+    # given the number of students and page size calculate pages needed to return all students
+    # @param count [Integer] - total number of students matching filter
+    # @param page_size [Integer] - total number of students to be return per page
+    # For example:
+    #     given: page_size = 100
+    #     when: 430 kids, then: 5 pages
+    #     when: 400 kids, then: 4 pages
+    # @return [Integer] - number of pages needed to return all students
     def calc_pages(count, page_size)
-      max_page  = ( (count.to_i-1) / page_size.to_i ).to_i + 1
+      ( (count.to_i-1) / page_size.to_i ).to_i + 1
     end
-    # 5
 
     # api_path = "/ws/v1/district/student/count?q=school_enrollment.enroll_status_code==0"
     # returns: {"resource"=>{"count"=>423}}
+    # @return [Integer] - the number of students matching the filter
     def get_matching_students_count(params={})
       api_path = "/ws/v1/district/student/count"
 
-      query  = []
-      query << "student_username==#{params[:username]}"  if params.has_key?(:username)
-      query << "local_id==#{params[:local_id]}"          if params.has_key?(:local_id)
-      query << "name.last_name==#{params[:last_name]}"   if params.has_key?(:last_name)
-      query << "name.first_name==#{params[:first_name]}" if params.has_key?(:first_name)
-      query << "school_enrollment.enroll_status==#{params[:enroll_status]}"    if params.has_key?(:enroll_status)
-      query << "school_enrollment.enroll_status_code==#{params[:status_code]}" if params.has_key?(:status_code)
-
-      options = {query: {"q" => query.join(";")} }
-      pp options
+      query   = build_query(params)
+      options = {query: { "q" => query } }  unless query.empty?
       return {"errorMessage"=>{"message"=>"A valid parameter must be entered."}} if query.empty?
 
-      answer  = api(:get, api_path, options)  # {"resource"=>{"count"=>423}}
+      answer  = api(:get, api_path, options)  #returns: {"resource"=>{"count"=>423}}
       answer.dig("resource", "count").to_i
     end
-    # 423
 
+    # NOT RECURSIVE - simple call to get one page of student summaries
     # params = {username: "xxxxxxx"} or {local_id: "12345"}
     # or       {enroll_status: "x"} or {status_code: "0"}
     # or       {first_name: "John"} or {last_name: "Brown"}
     # api_path = "/ws/v1/district/student?expansions=school_enrollment,contact&q=student_username==xxxxxx237"
-    def get_matching_students_page(params)
-      api_path = "/ws/v1/district/student"
-      params[:page_size]   ||= 100
-      params[:page_number] ||= 1
-      pp params
-      options = { query:
-                  { "pagesize"    => "#{params[:page_size]}",
-                    "page"        => "#{params[:page_number]}"} }
-      query  = []
-      query << "student_username==#{params[:username]}"  if params.has_key?(:username)
-      query << "local_id==#{params[:local_id]}"          if params.has_key?(:local_id)
-      query << "name.last_name==#{params[:last_name]}"   if params.has_key?(:last_name)
-      query << "name.first_name==#{params[:first_name]}" if params.has_key?(:first_name)
-      query << "school_enrollment.enroll_status==#{params[:enroll_status]}"    if params.has_key?(:enroll_status)
-      query << "school_enrollment.enroll_status_code==#{params[:status_code]}" if params.has_key?(:status_code)
-
-      options[:query]["q"] = query.join(";")
-      return {"errorMessage"=>{"message"=>"A valid parameter must be entered."}} if query.empty?
-      pp options
-      api(:get, api_path, options)
-    end
+    # @return [Hash] - returns one page of students
     # {"students"=>
     #   {"@expansions"=>
     #     "demographics, addresses, alerts, phones, school_enrollment, ethnicity_race, contact, contact_info, initial_enrollment, schedule_setup, fees, lunch",
@@ -262,7 +219,38 @@ module PsUtilities
     #     ]
     #   }
     # }
+    def get_matching_students_page(params)
+      api_path = "/ws/v1/district/student"
+      params[:page_size]   ||= 100
+      params[:page_number] ||= 1
+      # pp params
+      options = { query:
+                  { "pagesize"    => "#{params[:page_size]}",
+                    "page"        => "#{params[:page_number]}"} }
+      query    = build_query(params)
+      options[:query]["q"] = query     unless query.empty?
+      return {"errorMessage"=>{"message"=>"A valid parameter must be entered."}} if query.empty?
+      # pp options
+      api(:get, api_path, options)
+    end
 
+    # build the api query - you can use splats to match any character
+    # @param params [Hash] - valid keys include: :status_code (or :enroll_status), :username, :last_name, :first_name, :student_id (or :local_id), :id (or :dcid)
+    # @return [String] - "id==345;name.last_name==BA*"
+    def build_query(params)
+      query  = []
+      query << "school_enrollment.enroll_status_code==#{params[:status_code]}" if params.has_key?(:status_code)
+      query << "school_enrollment.enroll_status==#{params[:enroll_status]}"    if params.has_key?(:enroll_status)
+      query << "student_username==#{params[:username]}"  if params.has_key?(:username)
+      query << "name.last_name==#{params[:last_name]}"   if params.has_key?(:last_name)
+      query << "name.first_name==#{params[:first_name]}" if params.has_key?(:first_name)
+      query << "local_id==#{params[:local_id]}"          if params.has_key?(:local_id)
+      query << "local_id==#{params[:student_id]}"        if params.has_key?(:student_id)
+      query << "id==#{params[:dcid]}"                    if params.has_key?(:dcid)
+      query << "id==#{params[:id]}"                      if params.has_key?(:id)
+      answer = query.join(";")
+      answer
+    end
 
   end
 

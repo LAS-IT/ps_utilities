@@ -2,9 +2,9 @@ require 'openssl'
 require 'base64'
 require 'json'
 require 'httparty'
-require 'ps_utilities/pre_built_student_get'
-require 'ps_utilities/pre_built_student_put'
-require 'ps_utilities/pre_built_student_post'
+require 'ps_utilities/pre_built_get'
+require 'ps_utilities/pre_built_put'
+require 'ps_utilities/pre_built_post'
 
 # http://blog.honeybadger.io/ruby-custom-exceptions/
 class AuthError < RuntimeError
@@ -28,9 +28,9 @@ module PsUtilities
     attr_reader :auth_path, :auth_token
     attr_reader :version
 
-    include PsUtilities::PreBuiltStudentGet
-    include PsUtilities::PreBuiltStudentPut
-    include PsUtilities::PreBuiltStudentPost
+    include PsUtilities::PreBuiltGet
+    include PsUtilities::PreBuiltPut
+    include PsUtilities::PreBuiltPost
 
     # @param attributes: [Hash] -  options include: { base_uri: ENV['PS_URL'], auth_endpoint: (ENV['PS_AUTH_ENDPOINT'] || '/oauth/access_token'), client_id: ENV['PS_CLIENT_ID'], client_secret: ENV['PS_CLIENT_SECRET'] }
     # @param headers: [Hash] - allows to change from json to xml (only do this if you are doing direct api calls and not using pre-built calls) returns and use a different useragent: { 'User-Agent' => "PsUtilities - #{version}", 'Accept' => 'application/json', 'Content-Type' => 'application/json'}

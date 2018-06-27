@@ -24,25 +24,21 @@ Or install it yourself as:
 
 ## ToDo
 
-- add gem api docs
-- add example code
-- web mock and more tests
-- Student Creation (missing for LAS)
+- add user_exists?
+- Student Creation (needed for LAS)
   - add LDAP enabled
   - add parent web_id
   - add parent web_password
-- add db extensions as an extendable user module?
 
 ## Change Log
 
 * **v0.3.3** - 2018-06-??
+  - improve / finish tests (including web mocks)
+  - write example code - update_users update localized db extensions
 * **v0.3.2** - 2018-06-27 - cleanup and generalize
-  - improve tests
   - write gem docs
-  - add user_exists?
   - write example code - create_users
   - flexible usage of student database extensions added
-  - write example code - update_users update localized db extensions
 * **v0.3.1** - 2018-06-26 -- compatible with v0.3.0
   - added pre-built student create and update as POST - basic fields default
   - Can update db extensions (for las - not yet elegant or generalized, but how to is documented in the code)
