@@ -11,6 +11,7 @@ module PsUtilities
       get_all_matching_students(params)
     end
     alias_method :all_active_students, :get_all_active_students
+    alias_method :active_students,     :get_all_active_students
 
     # return all students within the district matching the filters are passed in -- this is a Recursive search and will collect all students
     # @param params [Hash] - enter a match criteria in the following format (* are allowed for wildcard matching):
@@ -43,6 +44,9 @@ module PsUtilities
       { students: students.flatten }
     end
     alias_method :all_matching_students, :get_all_matching_students
+    alias_method :matching_students,     :get_all_matching_students
+    alias_method :find_all_students,     :get_all_matching_students
+    alias_method :find_students,         :get_all_matching_students
 
     # retrieves all individual student's details - you must use the DCID !!!
     # @param params [Hash] - use either: {dcid: "12345"} or {id: "12345"}
@@ -116,56 +120,6 @@ module PsUtilities
       { student: (answer["student"] || []) }
     end
     alias_method :get_student, :get_one_student
-
-    # find a student within the district by username:, student_id: (local_id), id: (dcid) - this is NOT a recursive search - when many kids match
-    # @param params [Hash] - must be one of the following (* are allowed for wildcard matching): {username: "xxxxx*"} or {student_id: "12345"} or {local_id: "12345"} or {dcid: "654321"} or {id: "654321"}
-    # @return [Hash] - with the following format:
-    # {:students => [
-    #   {"id"=>7337,
-    #    "local_id"=>555807,
-    #    "student_username"=>"bassivm807",
-    #    "name"=>{"first_name"=>"Mountain", "last_name"=>"BASS"},
-    #    "demographics"=>{"gender"=>"M", "birth_date"=>"2002-08-26", "projected_graduation_year"=>2021},
-    #    "addresses"=>"",
-    #    "alerts"=>"",
-    #    "phones"=>"",
-    #    "school_enrollment"=>
-    #     {"enroll_status"=>"A",
-    #      "enroll_status_description"=>"Active",
-    #      "enroll_status_code"=>0,
-    #      "grade_level"=>9,
-    #      "entry_date"=>"2018-06-22",
-    #      "exit_date"=>"2019-08-06",
-    #      "school_number"=>2,
-    #      "school_id"=>2,
-    #      "full_time_equivalency"=>{"fteid"=>970, "name"=>"FTE Admissions"}},
-    #    "ethnicity_race"=>{"federal_ethnicity"=>"NO"},
-    #    "contact"=>{"guardian_email"=>"mountain@bass.com"},
-    #    "contact_info"=>{"email"=>"joey@las.ch"},
-    #    "initial_enrollment"=>{"district_entry_grade_level"=>0, "school_entry_grade_level"=>0},
-    #    "schedule_setup"=>{"next_school"=>33, "sched_next_year_grade"=>10},
-    #    "fees"=>"",
-    #    "lunch"=>{"balance_1"=>"0.00", "balance_2"=>"0.00", "balance_3"=>"0.00", "balance_4"=>"0.00", "lunch_id"=>0}
-    #   },
-    #   { ... }
-    #  ]
-    # }
-    # @note - this lookup will not include data from database extensions
-    # def find_students(params)
-    #   # api_path = "/ws/v1/district/student?expansions=school_enrollment,contact&q=student_username==xxxxxx237"
-    #   api_path   = "/ws/v1/district/student"
-    #
-    #   options    = { query: {"expansions" => "demographics,addresses,alerts,phones,school_enrollment,ethnicity_race,contact,contact_info,initial_enrollment,schedule_setup,fees,lunch"} }
-    #   query      = build_query(params)
-    #   options[:query]["q"] = query.join(";")
-    #   return {"errorMessage"=>{"message"=>"A valid parameter must be entered."}} if query.empty?
-    #
-    #   answer = api(:get, api_path, options)
-    #   { students: (answer.dig("students","student") || []) }
-    # end
-    # alias_method :find_student, :find_students
-    # alias_method :find_student_by_local_id, :find_students
-    # alias_method :find_student_by_username, :find_students
 
     private
 
