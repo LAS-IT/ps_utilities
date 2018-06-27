@@ -121,7 +121,7 @@ https://powerschool.com/ws/v1/student/2?extensions=studentcorefields,c_studentlo
 #         {"name"=>"transcriptaddrcountry", "type"=>"String", "value"=>"Swizterland"},
 #         {"name"=>"transcriptaddrcity", "type"=>"String", "value"=>"Almaty"},
 #         {"name"=>"father_name", "type"=>"String", "value"=>"Zzzzzzzzz, Yyyyyyyy"},
-#         {"name"=>"transcriptaddrline1", "type"=>"String", "value"=>"Dddddd  Str 11 app 22"},
+#         {"name"=>"transcriptaddrline1", "type"=>"String", "value"=>"Dddddd Str 11"},
 #         {"name"=>"transcriptaddrline2", "type"=>"String", "value"=>"LAS"}],
 #       "name"=>"u_studentsuserfields"}},
 #   "id"=>5011,
@@ -144,7 +144,7 @@ you can post a little blob of geojson, like so:
 curl -X POST -H "Content-Type: application/json" \
 -H "Authorization: Bearer 88888888-7777-4444-bbbb-999999993333" \
 -d '{"students":{"student":[{"client_uid":"124","action":"UPDATE","id":"442","name":{"first_name":"Aaronia","last_name":"Stephaniia"}},{"client_uid":"1245","action":"UPDATE","id":"443","name":{"first_name":"Chauncey","last_name":"McTavish"}}]}}' https://school.powerschool.com/ws/v1/student/
-# nicely formatted it looks like:
+# a simple name update and a more complex custom field (transcript address update)
 body: {
    students: {
       student:[
@@ -156,13 +156,32 @@ body: {
                last_name: "Stephaniia"
             },
          },
-         {  :client_uid: "1245",
-            action: "UPDATE",
-            id: "443",
-            name: {
-               first_name: "Chauncey",
-               last_name: "McTavish"
-            }
+         { :action=>"UPDATE",
+           :id=>7337,
+           :client_uid=>"555807",
+           :contact_info=>{:email=>"bassjoe@las.ch"},
+           "_extension_data"=> {
+             "_table_extension"=>  [
+               { "recordFound"=>false,
+                 "name"=>"u_students_extension",
+                 "_field"=> [
+                   {"name"=>"preferredname", "type"=>"String", "value"=>"Joe"},
+                   {"name"=>"student_email", "type"=>"String", "value"=>"bassjoe@las.ch"}
+                 ]
+               },
+               { "recordFound"=>false,
+                 "name"=>"u_studentsuserfields",
+                 "_field"=> [
+                   {"name"=>"transcriptaddrline1", "type"=>"String", "value"=>"LAS"},
+                   {"name"=>"transcriptaddrline2", "type"=>"String", "value"=>"CP 108"},
+                   {"name"=>"transcriptaddrcity", "type"=>"String", "value"=>"Leysin"},
+                   {"name"=>"transcriptaddrzip", "type"=>"String", "value"=>"1854"},
+                   {"name"=>"transcriptaddrstate", "type"=>"String", "value"=>"Vaud"},
+                   {"name"=>"transcriptaddrcountry", "type"=>"String", "value"=>"CH"}
+                 ]
+               }
+             ]
+           }
          }
       ]
    }

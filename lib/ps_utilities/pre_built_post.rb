@@ -31,9 +31,13 @@ module PsUtilities
 
     # params[:students] (Array of Hashes) - kids with their attributes
     def update_students(params)
+      pp "update students"
+      pp params
       action = "UPDATE"
       kids_api_array = build_kids_api_array(action, params)
+      pp kids_api_array
       options  = { body: { students: { student: kids_api_array } }.to_json }
+      pp options
       answer = api(:post, "/ws/v1/student", options)
     end
     alias_method :update_student, :update_students
@@ -53,18 +57,25 @@ module PsUtilities
     # }
 
     def build_kids_api_array(action, params)
-      unless params[:students].is_a? Array
+      pp "build_kids_api_array"
+      pp params
+      students  = []
+      api_array = []
+      students <<  params[:student]  if params[:student]
+      students  =  params[:students] if params[:students]
+      unless students.is_a? Array
         return {"errorMessage"=>{"message"=>"Student Data (in Hash format) must be in an Array."}}
       end
-      kids_api_array  = []
-      params[:students].each do |kid|
-        kid[:las_extensions] = true if params[:las_extensions]
-        kids_api_array << build_kid_attributes(action, kid)
+      students.each do |kid|
+        # kid[:las_extensions] = true if params[:las_extensions]
+        api_array << build_kid_attributes(action, kid)
       end
-      return kids_api_array
+      return api_array
     end
 
     def build_kid_attributes(action, kid)
+      pp "build_kid_attributes"
+      pp kid
       # ALWAYS NEEDED INFO
       attribs                        = {action: action}
       attribs[:id]                   = kid[:id] || kid[:dcid]
@@ -100,7 +111,26 @@ module PsUtilities
         attribs[:name][:middle_name] = kid[:middle_name] if kid[:middle_name]
       end
 
-      # OPTIONAL
+      # OPTIONAL FIELDS
+      attribs[:address] = {}
+      if kid[:physical_street] or kid[:physical_city] or kid[:physical_state_province] or
+          kid[:physical_postal_code] or kid[:physical_grid_location]
+        attribs[:address][:physical] = {}
+        attribs[:address][:physical][:street] = kid[:physical_street]      if kid[:physical_street]
+        attribs[:address][:physical][:city]   = kid[:physical_city]        if kid[:physical_city]
+        attribs[:address][:physical][:state_province] = kid[:physical_state]    if kid[:physical_state]
+        attribs[:address][:physical][:postal_code]    = kid[:physical_postal_code] if kid[:physical_postal_code]
+        attribs[:address][:physical][:grid_location]  = kid[:physical_grid_location] if kid[:physical_grid_location]
+      end
+      if kid[:mailing_street] or kid[:mailing_city] or kid[:mailing_state_province] or
+          kid[:mailing_postal_code] or kid[:mailing_grid_location]
+        attribs[:address][:mailing] = {}
+        attribs[:address][:mailing][:street] = kid[:mailing_street]      if kid[:mailing_street]
+        attribs[:address][:mailing][:city]   = kid[:mailing_city]        if kid[:mailing_city]
+        attribs[:address][:mailing][:state_province] = kid[:mailing_state]    if kid[:mailing_state]
+        attribs[:address][:mailing][:postal_code]    = kid[:mailing_postal_code] if kid[:mailing_postal_code]
+        attribs[:address][:mailing][:grid_location]  = kid[:mailing_grid_location] if kid[:mailing_grid_location]
+      end
       attribs[:contact] = {}
       if kid[:emergency_phone1] && kid[:emergency_contact_name1]
         attribs[:contact][:emergency_phone1]        = kid[:emergency_phone1]
@@ -142,124 +172,134 @@ module PsUtilities
       attribs[:school_enrollment][:exit_date]      = kid[:exit_date]     if kid[:exit_date]
       attribs[:school_enrollment][:school_number]  = kid[:school_number] if kid[:school_number]
       #
-      attribs[:contact_info]     = {email: kid[:email]}           if kid[:email]
-      attribs[:phone]            = {main: {number: kid[:mobile]}} if kid[:mobile]
+      attribs[:contact_info]     = {email: kid[:email]}                  if kid[:email]
+      attribs[:phone]            = {main: {number: kid[:mobile]}}        if kid[:mobile]
 
       # Update LAS Database Extensions as needed
-      attribs["_extension_data"] = calc_las_extensions(kid)      if kid[:las_extensions].to_s.eql?("true")
+      attribs["_extension_data"] = { "_table_extension" => [] }
+      if kid[:transcriptaddrline1] or kid[:transcriptaddrline2] or
+            kid[:transcriptaddrcity] or kid[:transcriptaddrstate] or
+            kid[:transcriptaddrzip]  or kid[:transcriptaddrcountry]
+        attribs["_extension_data"]["_table_extension"] << transcript_address(kid)
+      end
+      # built-in extensions by PowerSchool
+      attribs["_extension_data"]["_table_extension"] << u_studentsuserfields(kid[:u_studentsuserfields])
+      # school defined database extensions
+      attribs["_extension_data"]["_table_extension"] << u_students_extension(kid[:u_students_extension])
+      # if no extension data present make it empty
+      attribs["_extension_data"] = {}                if attribs["_extension_data"]["_table_extension"].empty?
 
-      # return attributes - first remove, nils, empty strings and empty hashes
+      # remove, nils, empty strings and empty hashes
       answer = attribs.reject { |k,v| v.nil? || v.to_s.empty? || v.to_s.eql?("{}")}
+      pp "kid-attributes"
       pp answer
       return answer
     end
-    # Data structure to send to API
-    # options = {body: {
-    #      "students":{
-    #         "student":[
-    #            {
-    #               "client_uid":"124",
-    #               "action":"UPDATE",
-    #               "id":"442",
-    #               "name":{
-    #                  "first_name":"Aaronia",
-    #                  "last_name":"Stephaniia"
-    #               },
-    #            },
-    #            { ... }
+    # Data structure to send to API (with built-in PS extensions)
+    # { :action=>"UPDATE",
+    #   :id=>7337,
+    #   :client_uid=>"555807",
+    #   :contact_info=>{:email=>"bassjoe@las.ch"},
+    #   "_extension_data"=> {
+    #     "_table_extension"=>  [
+    #       { "recordFound"=>false,
+    #         "name"=>"u_students_extension",
+    #         "_field"=> [
+    #           {"name"=>"preferredname", "type"=>"String", "value"=>"Joe"},
+    #           {"name"=>"student_email", "type"=>"String", "value"=>"bassjoe@las.ch"}
     #         ]
-    #      }
+    #       },
+    #       { "recordFound"=>false,
+    #         "name"=>"u_studentsuserfields",
+    #         "_field"=> [
+    #           {"name"=>"transcriptaddrline1", "type"=>"String", "value"=>"LAS"},
+    #           {"name"=>"transcriptaddrline2", "type"=>"String", "value"=>"CP 108"},
+    #           {"name"=>"transcriptaddrcity", "type"=>"String", "value"=>"Leysin"},
+    #           {"name"=>"transcriptaddrzip", "type"=>"String", "value"=>"1854"},
+    #           {"name"=>"transcriptaddrstate", "type"=>"String", "value"=>"Vaud"},
+    #           {"name"=>"transcriptaddrcountry", "type"=>"String", "value"=>"CH"}
+    #         ]
+    #       }
+    #     ]
     #   }
+
+    def transcript_address(kid)
+      pp "transcript_address"
+      pp kid
+      db_extensions = { "name"=>"u_studentsuserfields", "recordFound"=>false,
+                        "_field"=> [] }
+      if kid[:transcriptaddrline1]
+        db_extensions["_field"] << {"name"=>"transcriptaddrline1", "type"=>"String", "value"=>"#{kid[:transcriptaddrline1]}"}
+      end
+      if kid[:transcriptaddrline2]
+        db_extensions["_field"] << {"name"=>"transcriptaddrline2", "type"=>"String", "value"=>"#{kid[:transcriptaddrline2]}"}
+      end
+      if kid[:transcriptaddrcity]
+        db_extensions["_field"] << {"name"=>"transcriptaddrcity", "type"=>"String", "value"=>"#{kid[:transcriptaddrcity]}"}
+      end
+      if kid[:transcriptaddrzip]
+        db_extensions["_field"] << {"name"=>"transcriptaddrzip", "type"=>"String", "value"=>"#{kid[:transcriptaddrzip]}"}
+      end
+      if kid[:transcriptaddrstate]
+        db_extensions["_field"] << {"name"=>"transcriptaddrstate", "type"=>"String", "value"=>"#{kid[:transcriptaddrstate]}"}
+      end
+      if kid[:transcriptaddrcountry]
+        db_extensions["_field"] << {"name"=>"transcriptaddrcountry", "type"=>"String", "value"=>"#{kid[:transcriptaddrcountry]}"}
+      end
+      db_extensions
+    end
+    # { "recordFound"=>false,
+    #   "name"=>"u_studentsuserfields",
+    #   "_field"=> [
+    #     {"name"=>"transcriptaddrzip", "type"=>"String", "value"=>75230},
+    #     {"name"=>"transcriptaddrcountry", "type"=>"String", "value"=>"United States"},
+    #     {"name"=>"transcriptaddrcity", "type"=>"String", "value"=>"dallas"},
+    #     {"name"=>"transcriptaddrstate", "type"=>"String", "value"=>"Texas"},
+    #     {"name"=>"transcriptaddrline1", "type"=>"String", "value"=>"6138 meadow rd"}
+    #   ]
+    # }
+    # end
+
+    def u_students_extension(data)
+
+      pp "u_students_extension"
+      pp data
+
+      db_extensions = { "name"=>"u_students_extension", "recordFound"=>false,
+                        "_field"=> [] }
+      data.each do |key, value|
+        pp "key"
+        pp key
+        pp "value"
+        pp value
+        db_extensions["_field"] << {"name"=>"#{key}", "type"=>"String", "value"=>"#{value}"}
+      end
+      db_extensions
+    end
+    # { "name"=>"u_students_extension",
+    #   "recordFound"=>false,
+    #   "_field"=> [
+    #     {"name"=>"preferredname", "type"=>"String", "value"=>"Joe"},
+    #     {"name"=>"student_email", "type"=>"String", "value"=>"joe@las.ch"},
+    #   ]
     # }
 
-    def calc_las_extensions(kid)
-      # attribs = {}
-      # attribs["_table_extension"] = []
-      attribs = { "_table_extension" => [] }
-      if kid[:email] or kid[:preferred_name]
-        db_extensions =
-          { "recordFound"=>false,
-            "name"=>"u_students_extension",
-            "_field"=> [ ]
-          }
-        if kid[:email]
-          db_extensions["_field"] << {"name"=>"student_email", "type"=>"String", "value"=>"#{kid[:email]}"}
-        end
-        if kid[:preferredname]
-          db_extensions["_field"] << {"name"=>"preferredname", "type"=>"String", "value"=>"#{kid[:preferredname]}"}
-        end
-        if kid[:preferred_name]
-          db_extensions["_field"] << {"name"=>"preferredname", "type"=>"String", "value"=>"#{kid[:preferred_name]}"}
-        end
-        attribs["_table_extension"] << db_extensions
-        # { "recordFound"=>false,
-        #   "name"=>"u_students_extension",
-        #   "_field"=> [
-        #     {"name"=>"preferredname", "type"=>"String", "value"=>"Niko"},
-        #     {"name"=>"student_email", "type"=>"String", "value"=>"#{kid[:email]}"}
-        #   ]
-        # }
+    def u_studentsuserfields(data)
+      db_extensions = { "name"=>"u_studentsuserfields", "recordFound"=>false,
+                        "_field"=> [] }
+      data.each do |key, value|
+        db_extensions["_field"] << {"name"=>"#{key}", "type"=>"String", "value"=>"#{value}"}
       end
-      if kid[:transcriptaddrline1] or kid[:transcriptaddrline2] or
-          kid[:transcriptaddrcity] or kid[:transcriptaddrstate] or
-          kid[:transcriptaddrzip]  or kid[:transcriptaddrcountry]
-        db_extensions =
-          { "recordFound"=>false,
-            "name"=>"u_studentsuserfields",
-            "_field"=> [ ]
-          }
-        if kid[:transcriptaddrline1]
-          db_extensions["_field"] << {"name"=>"transcriptaddrline1", "type"=>"String", "value"=>"#{kid[:transcriptaddrline1]}"}
-        end
-        if kid[:transcriptaddrline2]
-          db_extensions["_field"] << {"name"=>"transcriptaddrline2", "type"=>"String", "value"=>"#{kid[:transcriptaddrline2]}"}
-        end
-        if kid[:transcriptaddrcity]
-          db_extensions["_field"] << {"name"=>"transcriptaddrcity", "type"=>"String", "value"=>"#{kid[:transcriptaddrcity]}"}
-        end
-        if kid[:transcriptaddrzip]
-          db_extensions["_field"] << {"name"=>"transcriptaddrzip", "type"=>"String", "value"=>"#{kid[:transcriptaddrzip]}"}
-        end
-        if kid[:transcriptaddrstate]
-          db_extensions["_field"] << {"name"=>"transcriptaddrstate", "type"=>"String", "value"=>"#{kid[:transcriptaddrstate]}"}
-        end
-        if kid[:transcriptaddrcountry]
-          db_extensions["_field"] << {"name"=>"transcriptaddrcountry", "type"=>"String", "value"=>"#{kid[:transcriptaddrcountry]}"}
-        end
-        attribs["_table_extension"] << db_extensions
-        # { "recordFound"=>false,
-        #   "name"=>"u_studentsuserfields",
-        #   "_field"=> [
-        #     {"name"=>"transcriptaddrzip", "type"=>"String", "value"=>75230},
-        #     {"name"=>"transcriptaddrcountry", "type"=>"String", "value"=>"United States"},
-        #     {"name"=>"transcriptaddrcity", "type"=>"String", "value"=>"dallas"},
-        #     {"name"=>"transcriptaddrstate", "type"=>"String", "value"=>"Texas"},
-        #     {"name"=>"transcriptaddrline1", "type"=>"String", "value"=>"6138 meadow rd"}
-        #   ]
-        # }
-      end
-      pp attribs
-      attribs
+      db_extensions
     end
-    # to inject into _extension_data
-    # { "_table_extension"=> [
-    #     { "recordFound"=>false,
-    #       "name"=>"u_students_extension",
-    #       "_field"=> [
-    #         {"name"=>"preferredname", "type"=>"String", "value"=>"Jimmy"},
-    #         {"name"=>"student_email", "type"=>"String", "value"=>"bbaaccdd@las.ch"}
-    #       ]
-    #     },
-    #     { "recordFound"=>false,
-    #       "name"=>"u_studentsuserfields",
-    #       "_field"=> [
-    #         {"name"=>"transcriptaddrzip", "type"=>"String", "value"=>8154},
-    #         {"name"=>"transcriptaddrcountry", "type"=>"String", "value"=>"Switzerland"},
-    #         {"name"=>"transcriptaddrcity", "type"=>"String", "value"=>"Leysin"},
-    #         {"name"=>"transcriptaddrstate", "type"=>"String", "value"=>"Vaud"},
-    #         {"name"=>"transcriptaddrline1", "type"=>"String", "value"=>"6789 linden st"}
-    #       ]
-    #     }
+    # { "name"=>"u_students_extension",
+    #   "recordFound"=>false,
+    #   "_field"=> [
+    #     {"name"=>"transcriptaddrzip", "type"=>"String", "value"=>75230},
+    #     {"name"=>"transcriptaddrcountry", "type"=>"String", "value"=>"United States"},
+    #     {"name"=>"transcriptaddrcity", "type"=>"String", "value"=>"dallas"},
+    #     {"name"=>"transcriptaddrstate", "type"=>"String", "value"=>"Texas"},
+    #     {"name"=>"transcriptaddrline1", "type"=>"String", "value"=>"6138 meadow rd"}
     #   ]
     # }
 

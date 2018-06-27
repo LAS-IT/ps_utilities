@@ -72,7 +72,9 @@ module PsUtilities
       retries = 3
       ps_url  = base_uri + api_path
       options = options.merge(headers)
+      pp "api-url"
       pp ps_url
+      pp "api-options"
       pp options
       begin
         HTTParty.send(verb, ps_url, options)
