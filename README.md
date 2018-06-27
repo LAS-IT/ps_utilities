@@ -87,26 +87,8 @@ ps.run(command: :authenticate)
 # or
 ps.run
 
-#
-api_path = "/ws/v1/district/student/count"
-options  = { query: { "q" => "school_enrollment.enroll_status_code==0" } }
-count    = ps.run( command: :get, api_path: api_path, options: options )
-# or
-# pre-build common command
-count    = ps.run( command: :get_active_students_count )
-pp count
-# => {"resource"=>{"count"=>423}}
-
 # list of active students
-page_number = 2
-api_path = "/ws/v1/district/student"
-options  = { query: { "q"=>"school_enrollment.enroll_status==a",
-                      "pagesize"=>"500",
-                      "page"=> "#{page_number}" } }
-kids     = ps.run( command: :get, api_path: api_path, options: options )
-# or
-# pre-built
-kids     = ps.run( command: :get_active_students_info )
+kids     = ps.run( command: :get_all_active_students )
 pp kids
 # => {"students"=>
 #   {"@expansions"=>
@@ -117,20 +99,42 @@ pp kids
 #     [
 #       {"id"=>4916, "local_id"=>112406, "student_username"=>"xxxx406", "name"=>{"first_name"=>"Xxxxxx", "last_name"=>"xxxxx"}},
 #       {"id"=>5037, "local_id"=>112380, "student_username"=>"yyyyy380", "name"=>{"first_name"=>"Yyyyyy", "last_name"=>"YYYYY"}},
+#       .....
 #     ]
 #   }
 # }
 
+# get all active students with last_name starting with B
+kids    = ps.run(command: :get_all_matching_students,
+                  params: {last_name: "B*", status_code: 0})
 
-# get one kid - using multiple extensions
-api_path = "/ws/v1/district/student"
-option   =  { query: {"expansions"=>"school_enrollment,contact,contact_info",
-                      "q"         =>"student_username==user237"} }
-one      = ps.run(command: :get, api_path: api_path )
-# or
-# pre-built
+data = [
+  { id: 7337, student_id: 555807, email: "joey@las.ch",
+    u_students_extension: { student_email: "joey@las.ch", preferredname: "Joey"},
+    u_studentsuserfields: { transcriptaddrline1: "LAS", transcriptaddrcity: "Bex",
+                            transcriptaddrzip: "1858", transcriptaddrstate: "VD",
+                            transcriptaddrcountry: "CH", transcriptaddrline2: "CP 108"} }
+]
+kids = ps.run(command: :update_students, params: {students: data })
+# {"results"=>
+#   {"insert_count"=>0,
+#    "update_count"=>1,
+#    "delete_count"=>0,
+#    "result"=>
+#     { "client_uid"=>555807,
+#       "status"=>"SUCCESS",
+#       "action"=>"UPDATE",
+#       "success_message"=>{
+#         "id"=>7337,
+#         "ref"=>"https://las-test.powerschool.com/ws/v1/student/7337"
+#       }
+#     }
+#   }
+# }
+
+# get one kid - check the results of update
 params   = {username: "user237"}
-one      = ps.run(command: :get_one_student_record, params: params )
+one      = ps.run(command: :get_one_student, params: params )
 # => {"students"=>
 #   {"@expansions"=>
 #     "demographics, addresses, alerts, phones, school_enrollment, ethnicity_race, contact, contact_info, initial_enrollment, schedule_setup, fees, lunch",
@@ -152,6 +156,57 @@ one      = ps.run(command: :get_one_student_record, params: params )
 #        "school_id"=>6,
 #        "entry_comment"=>"Promote Same School",
 #        "full_time_equivalency"=>{"fteid"=>1070, "name"=>"FTE Value: 1"}}}}}
+
+# UPDATE A STUDENT ACCOUNT
+data = { id: 7337, student_id: 555807, email: "joey@las.ch",
+    u_students_extension: { student_email: "joey@las.ch", preferredname: "Joey"},
+    u_studentsuserfields: { transcriptaddrline1: "LAS", transcriptaddrline2: "CP 108",
+                            transcriptaddrzip: "1858", transcriptaddrstate: "VD",
+                            transcriptaddrcity: "Bex", transcriptaddrcountry: "CH"}
+}
+kids = ps.run(command: :update_student, params: {student: data })
+
+# UPDATE SEVERAL STUDENT ACCOUNTS
+data = [
+  { id: 7337, student_id: 555807, email: "joey@las.ch",
+    u_students_extension: { student_email: "joey@las.ch", preferredname: "Joey"},
+    u_studentsuserfields: { transcriptaddrline1: "LAS", transcriptaddrline2: "CP 108",
+                            transcriptaddrzip: "1858", transcriptaddrstate: "VD",
+                            transcriptaddrcity: "Bex", transcriptaddrcountry: "CH"}
+  },,
+  { id: 7338, student_id: 555808, email: "jack@las.ch",
+    u_students_extension: { student_email: "jack@las.ch", preferredname: "jack"},
+    u_studentsuserfields: { transcriptaddrline1: "A Rd.",
+                            transcriptaddrzip: "1859", transcriptaddrstate: "VD",
+                            transcriptaddrcity: "Aigle",transcriptaddrcountry: "DE"}
+  }
+]
+kids = ps.run(command: :update_students, params: {students: data })
+# MAKE A STUDENT ACCOUNT
+data = { student_id: 555807, email: "joey@las.ch",
+    u_students_extension: { student_email: "joey@las.ch", preferredname: "Joey"},
+    u_studentsuserfields: { transcriptaddrline1: "LAS", transcriptaddrline2: "CP 108",
+                            transcriptaddrzip: "1858", transcriptaddrstate: "VD",
+                            transcriptaddrcity: "Bex", transcriptaddrcountry: "CH"}
+}
+kids = ps.run(command: :create_student, params: {student: data })
+
+# MAKE SEVERAL STUDENT ACCOUNTS
+data = [
+  { student_id: 555807, email: "joey@las.ch",
+    u_students_extension: { student_email: "joey@las.ch", preferredname: "Joey"},
+    u_studentsuserfields: { transcriptaddrline1: "LAS", transcriptaddrline2: "CP 108",
+                            transcriptaddrzip: "1858", transcriptaddrstate: "VD",
+                            transcriptaddrcity: "Bex", transcriptaddrcountry: "CH"}
+  },
+  { student_id: 555808, email: "jack@las.ch",
+    u_students_extension: { student_email: "jack@las.ch", preferredname: "jack"},
+    u_studentsuserfields: { transcriptaddrline1: "A Rd.",
+                            transcriptaddrzip: "1859", transcriptaddrstate: "VD",
+                            transcriptaddrcity: "Aigle",transcriptaddrcountry: "DE"}
+  }
+]
+kids = ps.run(command: :create_students, params: {students: data })
 
 ```
 
