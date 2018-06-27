@@ -81,10 +81,6 @@ module PsUtilities
       retries = 3
       ps_url  = base_uri + api_path
       options = options.merge(headers)
-      pp "api-url"
-      pp ps_url
-      pp "api-options"
-      pp options
       begin
         HTTParty.send(verb, ps_url, options)
       rescue Net::ReadTimeout, Net::OpenTimeout
@@ -134,6 +130,7 @@ module PsUtilities
         'Accept' => 'application/json',
         'Authorization' => 'Basic ' + creds64
       }
+      # with(headers: {'Authorization' => "Basic #{ Base64.strict_encode64('user:pass').chomp}"})
     end
 
     def encode_credentials(creds = credentials)

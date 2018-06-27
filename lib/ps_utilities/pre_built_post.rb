@@ -41,13 +41,9 @@ module PsUtilities
     # this updates and existing student record within PowerSchool
     # (see #create_students)
     def update_students(params)
-      pp "update students"
-      pp params
       action = "UPDATE"
       kids_api_array = build_kids_api_array(action, params)
-      pp kids_api_array
       options  = { body: { students: { student: kids_api_array } }.to_json }
-      pp options
       answer = api(:post, "/ws/v1/student", options)
     end
     alias_method :update_student, :update_students
@@ -85,8 +81,6 @@ module PsUtilities
     #]
     # @note this is then sent to the API call with a body tag
     def build_kids_api_array(action, params)
-      pp "build_kids_api_array"
-      pp params
       students  = []
       api_array = []
       students <<  params[:student]  if params[:student]
@@ -174,8 +168,6 @@ module PsUtilities
     #     ]
     #   }
     def build_kid_attributes(action, kid)
-      pp "build_kid_attributes"
-      pp kid
       # ALWAYS NEEDED INFO
       attribs                        = {action: action}
       attribs[:id]                   = kid[:id] || kid[:dcid]

@@ -65,5 +65,4 @@ RSpec.describe "Actual Communication Tests" do
     end
   end
 
-
 end
