@@ -24,18 +24,23 @@ Or install it yourself as:
 
 ## ToDo
 
-- add user_exists?
 - Student Creation (needed for LAS)
   - add LDAP enabled
   - add parent web_id
   - add parent web_password
+- add user_exists? - test create a duplicate user scenario
 - add tests for bad data structures, ie when {studdents: {students: [{}]}}
 
 ## Change Log
 
-* **v0.3.3** - 2018-06-??
-  - improve / finish tests (including web mocks)
+* **v1.0.1** - 2018-06-??
+  - mock integrated tests
+  - test create a duplicate user scenario
   - write example code - update_users update localized db extensions
+* **v1.0.0** - 2018-06-28
+  - example code notes
+  - improve test coverage
+  - initialize api parameters changed
 * **v0.3.2** - 2018-06-27 - cleanup and generalize
   - write gem docs
   - write example code - create_users
@@ -63,16 +68,19 @@ require 'ps_utilities'
 
 # use parameters
 # ps = PsUtilities::Connection.new(
-#      { base_uri: 'https://ps.school.k12/',
-#        auth_endpoint: '/oauth/access_token',
+#      api_info: {
+#        base_uri: 'https://ps.school.k12/',
+#        auth_endpoint: '/oauth/access_token'},
+#      client_info: {
 #        client_id: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-#        client_secret:  'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
-#      }
+#        client_secret:  'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'},
+#      header_info: {
+#        'Content-Type' => 'application/json'}
 # )
 
 # Required ENV_Vars - found at:
 # System>System Settings>Plugin Management Configuration>your plugin>Data_Provider_Configuration
-# ENV['PS_BASE_URL'] = 'https://ps.school.k12/'              # (no default)
+# ENV['PS_BASE_URL'] = 'https://ps.school.k12/'         # (no default)
 # ENV['PS_AUTH_ENDPOINT'] = '/oauth/access_token'       # (the default)
 # ENV['PS_CLIENT_ID'] = '23qewrdfghjuy675434ertyui'     # (no default)
 # ENV['PS_CLIENT_SECRET'] = '43ertfghjkloi9876trdfrdfg' # (no default)
@@ -91,11 +99,9 @@ ps.run
 # list of active students
 kids     = ps.run( command: :get_all_active_students )
 pp kids
-# => {"students"=>
-#   {"@expansions"=>
-#     "demographics, addresses, alerts, phones, school_enrollment, ethnicity_race, contact, contact_info, initial_enrollment, schedule_setup, fees, lunch",
-#    "@extensions"=>
-#     "s_stu_crdc_x,activities,c_studentlocator,u_students_extension,u_studentsuserfields,s_stu_ncea_x,s_stu_edfi_x,studentcorefields",
+# {"students"=>
+#   {"@expansions"=> "demographics, addresses, alerts, phones, school_enrollment, ethnicity_race, contact, contact_info, initial_enrollment, schedule_setup, fees, lunch",
+#    "@extensions"=> "s_stu_crdc_x,activities,c_studentlocator,u_students_extension,u_studentsuserfields,s_stu_ncea_x,s_stu_edfi_x,studentcorefields",
 #    "student"=>
 #     [
 #       {"id"=>4916, "local_id"=>112406, "student_username"=>"xxxx406", "name"=>{"first_name"=>"Xxxxxx", "last_name"=>"xxxxx"}},
