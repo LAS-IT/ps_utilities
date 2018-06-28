@@ -117,11 +117,33 @@ module PsUtilities
       return {"errorMessage"=>{"message"=>"A valid dcid must be entered."}} if "#{ps_dcid.to_i}".eql? "0"
 
       answer = api(:get, api_path, options)
-      { student: (answer["student"] || []) }
+      return { student: (answer["student"] || []) }  if answer.code.to_s.eql? "200"
+      # return { student: (answer.parsed_response["student"] || []) } if answer.code.to_s.eql? "200"
+      return {"errorMessage"=>"#{answer.response}"}
+
+
     end
     alias_method :get_student, :get_one_student
 
     private
+
+    # build the api query - you can use splats to match any character
+    # @param params [Hash] - valid keys include: :status_code (or :enroll_status), :username, :last_name, :first_name, :student_id (or :local_id), :id (or :dcid)
+    # @return [String] - "id==345;name.last_name==BA*"
+    def build_query(params)
+      query  = []
+      query << "school_enrollment.enroll_status_code==#{params[:status_code]}" if params.has_key?(:status_code)
+      query << "school_enrollment.enroll_status==#{params[:enroll_status]}"    if params.has_key?(:enroll_status)
+      query << "student_username==#{params[:username]}"  if params.has_key?(:username)
+      query << "name.last_name==#{params[:last_name]}"   if params.has_key?(:last_name)
+      query << "name.first_name==#{params[:first_name]}" if params.has_key?(:first_name)
+      query << "local_id==#{params[:local_id]}"          if params.has_key?(:local_id)
+      query << "local_id==#{params[:student_id]}"        if params.has_key?(:student_id)
+      query << "id==#{params[:dcid]}"                    if params.has_key?(:dcid)
+      query << "id==#{params[:id]}"                      if params.has_key?(:id)
+      answer = query.join(";")
+      answer
+    end
 
     # given the number of students and page size calculate pages needed to return all students
     # @param count [Integer] - total number of students matching filter
@@ -185,25 +207,9 @@ module PsUtilities
       options[:query]["q"] = query     unless query.empty?
       return {"errorMessage"=>{"message"=>"A valid parameter must be entered."}} if query.empty?
       # pp options
-      api(:get, api_path, options)
-    end
-
-    # build the api query - you can use splats to match any character
-    # @param params [Hash] - valid keys include: :status_code (or :enroll_status), :username, :last_name, :first_name, :student_id (or :local_id), :id (or :dcid)
-    # @return [String] - "id==345;name.last_name==BA*"
-    def build_query(params)
-      query  = []
-      query << "school_enrollment.enroll_status_code==#{params[:status_code]}" if params.has_key?(:status_code)
-      query << "school_enrollment.enroll_status==#{params[:enroll_status]}"    if params.has_key?(:enroll_status)
-      query << "student_username==#{params[:username]}"  if params.has_key?(:username)
-      query << "name.last_name==#{params[:last_name]}"   if params.has_key?(:last_name)
-      query << "name.first_name==#{params[:first_name]}" if params.has_key?(:first_name)
-      query << "local_id==#{params[:local_id]}"          if params.has_key?(:local_id)
-      query << "local_id==#{params[:student_id]}"        if params.has_key?(:student_id)
-      query << "id==#{params[:dcid]}"                    if params.has_key?(:dcid)
-      query << "id==#{params[:id]}"                      if params.has_key?(:id)
-      answer = query.join(";")
-      answer
+      answer = api(:get, api_path, options)
+      return answer.parsed_response         if answer.code.to_s.eql? "200"
+      return {"errorMessage"=>"#{answer.response}"}
     end
 
   end
