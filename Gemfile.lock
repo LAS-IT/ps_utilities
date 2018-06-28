@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    ps_utilities (0.3.3)
+    ps_utilities (1.0.0)
       httparty (~> 0.16)
 
 GEM
