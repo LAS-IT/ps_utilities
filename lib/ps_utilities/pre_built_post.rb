@@ -30,23 +30,35 @@ module PsUtilities
     #     ]
     #   }
     # }
+    # @note create_students REQUIRED params are: :id
+    # @note create_students OPTIONAL params are:
+    # @note create_students INVALID params are:
     def create_students(params)
       action   = "INSERT"
       kids_api_array = build_kids_api_array(action, params)
       options  = { body: { students: { student: kids_api_array } }.to_json }
       answer = api(:post, "/ws/v1/student", options)
+      return answer.parsed_response   if answer.code.to_s.eql? "200"
+      return {"errorMessage"=>"#{answer.response}"}
     end
     alias_method :create_student, :create_students
 
     # this updates and existing student record within PowerSchool
     # (see #create_students)
+    # @note update_students REQUIRED params are: :last_name, :first_name, :entry_date, :exit_date, :school_number, :grade_level
+    # @note update_students OPTIONAL params are: :
+    # @note update_students INVALID params are:
     def update_students(params)
       action = "UPDATE"
       kids_api_array = build_kids_api_array(action, params)
       options  = { body: { students: { student: kids_api_array } }.to_json }
       answer = api(:post, "/ws/v1/student", options)
+      return answer.parsed_response   if answer.code.to_s.eql? "200"
+      return {"errorMessage"=>"#{answer.response}"}
     end
     alias_method :update_student, :update_students
+
+    private
 
     # @param action [String] - either "INSERT" or "UPDATE"
     # @param params [Array of Hashes] - in this format -- students: [{kid_1_info}, {kid_2_info}]
@@ -83,10 +95,10 @@ module PsUtilities
     def build_kids_api_array(action, params)
       students  = []
       api_array = []
-      students <<  params[:student]  if params[:student]
-      students  =  params[:students] if params[:students]
-      unless students.is_a? Array
-        return {"errorMessage"=>{"message"=>"Student Data (in Hash format) must be in an Array."}}
+      # students  = [params[:student]] if not params[:student].nil?  && params[:student].is_a?(Hash)
+      students  =  params[:students] #if not params[:students].nil? && params[:students].is_a?(Array)
+      if students.empty?
+        return {"errorMessage"=>{"message"=>"Bad student data - USE: {students: [{kid_data1}, {kid_data2}]}"}}
       end
       students.each do |kid|
         # kid[:las_extensions] = true if params[:las_extensions]
@@ -170,9 +182,8 @@ module PsUtilities
     def build_kid_attributes(action, kid)
       # ALWAYS NEEDED INFO
       attribs                        = {action: action}
-      attribs[:id]                   = kid[:id] || kid[:dcid]
       attribs[:client_uid]           = kid[:student_id].to_s
-      attribs[:student_username]     = kid[:username]
+      attribs[:student_username]     = kid[:username]        if kid[:username]
 
       # REQUIRED ON ENROLLMENT (optional later)
       attribs[:name]                 = {}
@@ -198,6 +209,7 @@ module PsUtilities
         attribs[:school_enrollment][:school_id]      = kid[:school_id]     if kid[:school_id]
       when 'UPDATE'
         # don't allow nil / blank name updates
+        attribs[:id]                 = kid[:id] || kid[:dcid]
         attribs[:name][:last_name]   = kid[:last_name]   if kid[:last_name]
         attribs[:name][:first_name]  = kid[:first_name]  if kid[:first_name]
         attribs[:name][:middle_name] = kid[:middle_name] if kid[:middle_name]
@@ -270,9 +282,9 @@ module PsUtilities
       # Update LAS Database Extensions as needed
       attribs["_extension_data"] = { "_table_extension" => [] }
       # built-in extensions by PowerSchool
-      attribs["_extension_data"]["_table_extension"] << u_studentsuserfields(kid[:u_studentsuserfields])
+      attribs["_extension_data"]["_table_extension"] << u_studentsuserfields(kid[:u_studentsuserfields]) if kid[:u_studentsuserfields]
       # school defined database extensions
-      attribs["_extension_data"]["_table_extension"] << u_students_extension(kid[:u_students_extension])
+      attribs["_extension_data"]["_table_extension"] << u_students_extension(kid[:u_students_extension]) if kid[:u_students_extension]
       # if no extension data present make it empty
       attribs["_extension_data"] = {}                if attribs["_extension_data"]["_table_extension"].empty?
 

@@ -120,8 +120,6 @@ module PsUtilities
       return { student: (answer["student"] || []) }  if answer.code.to_s.eql? "200"
       # return { student: (answer.parsed_response["student"] || []) } if answer.code.to_s.eql? "200"
       return {"errorMessage"=>"#{answer.response}"}
-
-
     end
     alias_method :get_student, :get_one_student
 

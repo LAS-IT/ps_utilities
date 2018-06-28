@@ -29,6 +29,7 @@ Or install it yourself as:
   - add LDAP enabled
   - add parent web_id
   - add parent web_password
+- add tests for bad data structures, ie when {studdents: {students: [{}]}}
 
 ## Change Log
 

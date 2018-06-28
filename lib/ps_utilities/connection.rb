@@ -57,10 +57,11 @@ module PsUtilities
     # @param params: [Hash] - this is the data needed for using pre-built commands - see the individual command for details
     # @note with no command an authenticatation check is done
     def run(command: nil, api_path: "", options: {}, params: {})
-      authenticate   unless token_valid?
-      @headers[:headers].merge!('Authorization' => 'Bearer ' + authorized_token)
+      authenticate                             unless token_valid?
+      # @headers[:headers].merge!('Authorization' => 'Bearer ' + authorized_token)
       case command
       when nil, :authenticate
+        authenticate
       when :delete, :get, :patch, :post, :put
         api(command, api_path, options)         unless api_path.empty?
       else
@@ -109,7 +110,7 @@ module PsUtilities
 
       @credentials[:token_expires] = Time.now + response.parsed_response['expires_in'].to_i
       @credentials[:access_token]  = response.parsed_response['access_token'].to_s
-      # @headers[:headers].merge!('Authorization' => 'Bearer ' + credentials[:access_token])
+      @headers[:headers].merge!('Authorization' => 'Bearer ' + credentials[:access_token])
 
       # throw error if no token returned -- nothing else will work
       raise AuthError.new("No Auth Token Returned",
