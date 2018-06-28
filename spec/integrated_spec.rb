@@ -54,13 +54,13 @@ RSpec.describe "Actual Communication Tests" do
     it "authenticates gets oauth token" do
       ps_new = PsUtilities::Connection.new
       ps_new.run
-      answer = ps_new.credentials[:access_token]
+      answer = ps_new.auth_info['access_token']
       expect( answer ).not_to be nil
     end
     it "authenticates has expiration time" do
       ps_new = PsUtilities::Connection.new
       ps_new.run
-      answer = ps_new.credentials[:token_expires]
+      answer = ps_new.auth_info['token_expires']
       expect( answer ).not_to be nil
     end
     xit "run(command: :authenticate) - returns expected data type" do

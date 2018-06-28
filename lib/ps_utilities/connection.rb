@@ -24,8 +24,9 @@ module PsUtilities
 
   class Connection
 
-    attr_reader :credentials, :headers, :base_uri
-    attr_reader :auth_path, :auth_token
+    attr_reader :auth_path, :auth_token, :auth_info, :headers
+    attr_reader :api_data, :base_uri, :auth_path
+    attr_reader :client, :client_id, :client_secret
     attr_reader :version
 
     include PsUtilities::PreBuiltGet
@@ -35,19 +36,20 @@ module PsUtilities
     # @param attributes: [Hash] -  options include: { base_uri: ENV['PS_BASE_URL'], auth_endpoint: (ENV['PS_AUTH_ENDPOINT'] || '/oauth/access_token'), client_id: ENV['PS_CLIENT_ID'], client_secret: ENV['PS_CLIENT_SECRET'] }
     # @param headers: [Hash] - allows to change from json to xml (only do this if you are doing direct api calls and not using pre-built calls) returns and use a different useragent: { 'User-Agent' => "PsUtilities - #{version}", 'Accept' => 'application/json', 'Content-Type' => 'application/json'}
     # @note preference is to use environment variables to initialize your server.
-    def initialize(attributes: {}, headers: {})
-      @version     = "v#{PsUtilities::Version::VERSION}"
-      @credentials = attr_defaults.merge(attributes)
-      @base_uri    = credentials[:base_uri]
-      @auth_path   = credentials[:auth_endpoint]
-      @headers     = header_defaults.merge(headers)
+    def initialize( header_info: {}, api_info: {}, client_info: {})
+      @version       = "v#{PsUtilities::Version::VERSION}"
+      @client        = client_defaults.merge(client_info)
+      @client_id     = client[:client_id]
+      @client_secret = client[:client_secret]
+      @api_data      = api_defaults.merge(api_info)
+      @base_uri      = api_data[:base_uri]
+      @auth_path     = api_data[:auth_endpoint]
+      @headers       = header_defaults.merge(header_info)
 
-      raise ArgumentError, "missing client_secret" if credentials[:client_secret].nil?  or
-                                                      credentials[:client_secret].empty?
-      raise ArgumentError, "missing client_id"     if credentials[:client_id].nil?  or
-                                                      credentials[:client_id].empty?
-      raise ArgumentError, "missing base_uri"      if credentials[:base_uri].nil?  or
-                                                      credentials[:base_uri].empty?
+      raise ArgumentError, "missing client_secret" if client_secret.nil? or client_secret.empty?
+      raise ArgumentError, "missing client_id"     if client_id.nil? or client_id.empty?
+      raise ArgumentError, "missing auth endpoint" if auth_path.nil? or auth_path.empty?
+      raise ArgumentError, "missing base_uri"      if base_uri.nil? or base_uri.empty?
     end
 
     # this runs the various options:
@@ -57,13 +59,14 @@ module PsUtilities
     # @param params: [Hash] - this is the data needed for using pre-built commands - see the individual command for details
     # @note with no command an authenticatation check is done
     def run(command: nil, api_path: "", options: {}, params: {})
-      authenticate                             unless token_valid?
-      # @headers[:headers].merge!('Authorization' => 'Bearer ' + authorized_token)
+      authenticate                            unless auth_valid?
+
       case command
       when nil, :authenticate
         authenticate
       when :delete, :get, :patch, :post, :put
-        api(command, api_path, options)         unless api_path.empty?
+        api(command, api_path, options)       unless api_path.empty?
+        # TODO: panick if api_path empty
       else
         send(command, params)
       end
@@ -72,7 +75,7 @@ module PsUtilities
     private
 
     def authorized_token
-      "#{credentials[:access_token]}"
+      "#{auth_info['access_token']}"
     end
 
     # verb = :delete, :get, :patch, :post, :put
@@ -98,7 +101,8 @@ module PsUtilities
       { headers:
         { 'User-Agent' => "PsUtilities - #{version}",
           'Accept' => 'application/json',
-          'Content-Type' => 'application/json'}
+          'Content-Type' => 'application/json'
+        }
       }
     end
 
@@ -107,45 +111,50 @@ module PsUtilities
       ps_url   = base_uri + auth_path
       response = HTTParty.post(ps_url, {headers: auth_headers,
                                         body: 'grant_type=client_credentials'})
-
-      @credentials[:token_expires] = Time.now + response.parsed_response['expires_in'].to_i
-      @credentials[:access_token]  = response.parsed_response['access_token'].to_s
-      @headers[:headers].merge!('Authorization' => 'Bearer ' + credentials[:access_token])
-
-      # throw error if no token returned -- nothing else will work
-      raise AuthError.new("No Auth Token Returned",
-                          ps_url, credentials
-                         ) if credentials[:access_token].empty?
+      if response.code.to_s.eql? "200"
+        @auth_info = response.parsed_response
+        @auth_info['token_expires'] = Time.now + response.parsed_response['expires_in'].to_i
+        @headers[:headers].merge!('Authorization' => 'Bearer ' + auth_info['access_token'])
+        return auth_info
+      else
+        # throw error if - error returned -- nothing else will work
+        raise AuthError.new("No Auth Token Returned", ps_url, client )
+      end
     end
 
-    def token_valid?(tokens = credentials)
-      return false if tokens[:access_token].nil?
-      return false if tokens[:access_token].empty?
-      return false if tokens[:token_expires].nil?
-      return false if tokens[:token_expires] <= Time.now
+    def auth_valid?(auth = auth_info)
+      return false if auth.nil?
+      return false if auth.empty?
+      return false if auth['access_token'].nil?
+      return false if auth['access_token'].empty?
+      return false if auth['token_expires'].nil?
+      return false if auth['token_expires'] < Time.now
       return true
     end
 
-    def auth_headers(creds64 = encode_credentials)
+    def auth_headers(credentials = client)
       { 'ContentType' => 'application/x-www-form-urlencoded;charset=UTF-8',
         'Accept' => 'application/json',
-        'Authorization' => 'Basic ' + creds64
+        'Authorization' => 'Basic ' + encode64_client(credentials)
       }
       # with(headers: {'Authorization' => "Basic #{ Base64.strict_encode64('user:pass').chomp}"})
     end
 
-    def encode_credentials(creds = credentials)
-      ps_auth_text = [ creds[:client_id],
-                       creds[:client_secret]
-                     ].join(':')
-      Base64.encode64(ps_auth_text).gsub(/\n/, '')
+    def encode64_client(credentials = client)
+      ps_auth_text = [ credentials[:client_id], credentials[:client_secret] ].join(':')
+      Base64.encode64(ps_auth_text).chomp
+      # Base64.encode64(ps_auth_text).gsub(/\n/, '')
     end
 
-    def attr_defaults
+    def client_defaults
+      { client_id:      ENV['PS_CLIENT_ID'],
+        client_secret:  ENV['PS_CLIENT_SECRET'],
+      }
+    end
+
+    def api_defaults
       { base_uri:       ENV['PS_BASE_URL'],
         auth_endpoint:  ENV['PS_AUTH_ENDPOINT'] || '/oauth/access_token',
-        client_id:      ENV['PS_CLIENT_ID'],
-        client_secret:  ENV['PS_CLIENT_SECRET'],
       }
     end
 
