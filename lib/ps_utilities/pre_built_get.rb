@@ -3,13 +3,11 @@ module PsUtilities
   module PreBuiltGet
 
     # return all active students within the district (special case of #get_all_matching_students) - a recursive search
-    # @param params [Hash] - ignored - only included for the api standard
+    # @param params [Hash] - page_size: is the only parameter accepted - default is 100
     # @return - (see #get_all_matching_students)
     def get_all_active_students(params={})
       page_size = params[:page_size] || 100
       params    = {status_code: 0, page_size: page_size}
-      pp params
-      # params[:status_code] = 0
       get_all_matching_students(params)
     end
     alias_method :all_active_students, :get_all_active_students
