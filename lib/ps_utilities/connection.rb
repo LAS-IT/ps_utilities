@@ -32,7 +32,7 @@ module PsUtilities
     include PsUtilities::PreBuiltPut
     include PsUtilities::PreBuiltPost
 
-    # @param attributes: [Hash] -  options include: { base_uri: ENV['PS_URL'], auth_endpoint: (ENV['PS_AUTH_ENDPOINT'] || '/oauth/access_token'), client_id: ENV['PS_CLIENT_ID'], client_secret: ENV['PS_CLIENT_SECRET'] }
+    # @param attributes: [Hash] -  options include: { base_uri: ENV['PS_BASE_URL'], auth_endpoint: (ENV['PS_AUTH_ENDPOINT'] || '/oauth/access_token'), client_id: ENV['PS_CLIENT_ID'], client_secret: ENV['PS_CLIENT_SECRET'] }
     # @param headers: [Hash] - allows to change from json to xml (only do this if you are doing direct api calls and not using pre-built calls) returns and use a different useragent: { 'User-Agent' => "PsUtilities - #{version}", 'Accept' => 'application/json', 'Content-Type' => 'application/json'}
     # @note preference is to use environment variables to initialize your server.
     def initialize(attributes: {}, headers: {})
@@ -142,7 +142,7 @@ module PsUtilities
     end
 
     def attr_defaults
-      { base_uri:       ENV['PS_URL'],
+      { base_uri:       ENV['PS_BASE_URL'],
         auth_endpoint:  ENV['PS_AUTH_ENDPOINT'] || '/oauth/access_token',
         client_id:      ENV['PS_CLIENT_ID'],
         client_secret:  ENV['PS_CLIENT_SECRET'],

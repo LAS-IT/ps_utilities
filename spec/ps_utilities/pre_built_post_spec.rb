@@ -3,7 +3,7 @@ require "spec_helper"
 RSpec.describe PsUtilities::PreBuiltPost do
 
   let!(:ps)       { PsUtilities::Connection.new }
-  let(:base_path) { "#{ENV['PS_URL']}"}
+  let(:base_path) { "#{ENV['PS_BASE_URL']}"}
   # let(:auth_token){ "1234567890" }
   let(:headers)   {
     { 'User-Agent' => "PsUtilities - #{ps.version}",

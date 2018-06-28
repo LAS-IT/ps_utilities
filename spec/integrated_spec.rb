@@ -20,6 +20,28 @@ require "spec_helper"
 
 RSpec.describe "Actual Communication Tests" do
 
+
+  let!(:ps)       { PsUtilities::Connection.new }
+  let(:base_path) { "#{ENV['PS_BASE_URL']}"}
+  let(:auth_token){ "1234567890" }
+  let(:auth_headers){
+    { 'ContentType' => 'application/x-www-form-urlencoded;charset=UTF-8',
+      'Accept' => 'application/json',
+      'Authorization' => 'Basic 1234567890'
+    }
+  }
+  let(:headers)   {
+    { 'User-Agent' => "PsUtilities - #{ps.version}",
+      'Accept' => 'application/json',
+      'Content-Type' => 'application/json',
+      'Authorization' => "Bearer #{auth_token}"
+    }
+  }
+  stub_request(:get, "#{base_path}/oauth/access_token").
+    with(headers: auth_headers, body: 'grant_type=client_credentials').
+    to_return(body: t1_enrolled.to_json, status: 200,
+              headers: { 'Content-Type' => 'application/json' })
+
   context "PowerSchool connection success" do
     it "authenicates by default" do
       ps_new = PsUtilities::Connection.new
