@@ -6,7 +6,9 @@ module PsUtilities
     # @param params [Hash] - ignored - only included for the api standard
     # @return - (see #get_all_matching_students)
     def get_all_active_students(params={})
-      params = {status_code: 0}
+      page_size = params[:page_size] || 100
+      params    = {status_code: 0, page_size: page_size}
+      pp params
       # params[:status_code] = 0
       get_all_matching_students(params)
     end
