@@ -32,7 +32,7 @@ module PsUtilities
     #   }
     # }
     # @note create_students REQUIRED params are: :student_id (chosen by the school same as local_id within PS), :last_name, :first_name, :entry_date, :exit_date, :school_number, :grade_level
-    # @note create_students OPTIONAL params include: :school_id, :username, :middle_name, physical address objects, mailing address objects, demographics objects, contacts objects, schedule setup objects, :contact_info, :phone, :u_studentsuserfields (powerschool defined extensions) & :u_students_extension (school defined db extensions)
+    # @note create_students OPTIONAL params include: :school_id, :username, :middle_name, physical address objects, mailing address objects, demographics objects, contacts objects, schedule setup objects, intial enrollment objects (disctrict and school), :contact_info, :phone, :u_studentsuserfields (powerschool defined extensions) & :u_students_extension (school defined db extensions)
     # @note create_students INVALID (ignored) params are: :id (dcid - chosen by the PS system)
     def create_students(params)
       action   = "INSERT"
@@ -189,7 +189,7 @@ module PsUtilities
       attribs[:name]                 = {}
       case action
       when 'INSERT'
-        # must be set on creation
+        # must be set on creation (INSERT)
         attribs[:local_id]  = kid[:oa_id].to_i
         # to create an account both first and last name must be present
         attribs[:name][:last_name]   = kid[:last_name]   if kid[:last_name] or kid[:first_name]
@@ -265,16 +265,11 @@ module PsUtilities
       attribs[:schedule_setup][:next_school] = kid[:next_school]   if kid[:next_school]
       attribs[:schedule_setup][:sched_next_year_grade] = kid[:sched_next_year_grade] if kid[:sched_next_year_grade]
       #
-      attribs[:school_enrollment] = {}
-      if kid[:enroll_status_code]
-        attribs[:school_enrollment][:enroll_status_code]  = kid[:enroll_status_code]
-      elsif kid[:status_code]
-        attribs[:school_enrollment][:status_code]         = kid[:status_code]
-      end
-      attribs[:school_enrollment][:grade_level]    = kid[:grade_level]   if kid[:grade_level]
-      attribs[:school_enrollment][:entry_date]     = kid[:entry_date]    if kid[:entry_date]
-      attribs[:school_enrollment][:exit_date]      = kid[:exit_date]     if kid[:exit_date]
-      attribs[:school_enrollment][:school_number]  = kid[:school_number] if kid[:school_number]
+      attribs[:initial_enrollment] = {}
+      attribs[:initial_enrollment][:school_entry_date]          = kid[:school_entry_date]          if kid[:school_entry_date]
+      attribs[:initial_enrollment][:school_entry_grade_level]   = kid[:school_entry_grade_level]   if kid[:school_entry_grade_level]
+      attribs[:initial_enrollment][:district_entry_date]        = kid[:district_entry_date]        if kid[:district_entry_date]
+      attribs[:initial_enrollment][:district_entry_grade_level] = kid[:district_entry_grade_level] if kid[:district_entry_grade_level]
       #
       attribs[:contact_info]     = {email: kid[:email]}                  if kid[:email]
       attribs[:phone]            = {main: {number: kid[:mobile]}}        if kid[:mobile]

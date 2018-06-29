@@ -215,7 +215,6 @@ RSpec.describe PsUtilities::Connection do
       # ps_new    = PsUtilities::Connection.new
       client  = {client_id: "MyName", client_secret: "ClientSecret"}
       answer  = ps.send(:encode64_client, client)
-      pp answer
       correct = "TXlOYW1lOkNsaWVudFNlY3JldA=="
       expect(answer).to eq(correct)
     end
