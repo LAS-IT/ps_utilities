@@ -31,9 +31,9 @@ module PsUtilities
     #     ]
     #   }
     # }
-    # @note create_students REQUIRED params are: :id
-    # @note create_students OPTIONAL params are:
-    # @note create_students INVALID params are:
+    # @note create_students REQUIRED params are: :student_id (chosen by the school same as local_id within PS), :last_name, :first_name, :entry_date, :exit_date, :school_number, :grade_level
+    # @note create_students OPTIONAL params include: :school_id, :username, :middle_name, physical address objects, mailing address objects, demographics objects, contacts objects, schedule setup objects, :contact_info, :phone, :u_studentsuserfields (powerschool defined extensions) & :u_students_extension (school defined db extensions)
+    # @note create_students INVALID (ignored) params are: :id (dcid - chosen by the PS system)
     def create_students(params)
       action   = "INSERT"
       kids_api_array = build_kids_api_array(action, params)
@@ -46,9 +46,8 @@ module PsUtilities
 
     # this updates and existing student record within PowerSchool
     # (see #create_students)
-    # @note update_students REQUIRED params are: :last_name, :first_name, :entry_date, :exit_date, :school_number, :grade_level
-    # @note update_students OPTIONAL params are: :
-    # @note update_students INVALID params are:
+    # @note update_students REQUIRED params are: **:id** (dcid) and **:student_id** (local_id)
+    # @note update_students INVALID (ignored) params are: :grade_level, :entry_date, :exit_date, :school_number, :school_id
     def update_students(params)
       action = "UPDATE"
       kids_api_array = build_kids_api_array(action, params)

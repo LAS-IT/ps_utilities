@@ -100,7 +100,7 @@ RSpec.describe PsUtilities::Connection do
         with(headers: headers).
         to_return(body: t1_enrolled.to_json, status: 200,
                   headers: { 'Content-Type' => 'application/json' })
-      ps.run(command: :authenticate)
+      # ps.run(command: :authenticate)
       answer  = ps.run(command: :get,
                         api_path: "/ws/v1/district/student?page=1&pagesize=2&q=school_enrollment.enroll_status_code==0;student_username==t*"
                        )

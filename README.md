@@ -24,6 +24,8 @@ Or install it yourself as:
 
 ## ToDo
 
+- test create a duplicate user scenario
+- write example code - update_users update localized db extensions
 - Student Creation (needed for LAS)
   - add LDAP enabled
   - add parent web_id
@@ -34,12 +36,11 @@ Or install it yourself as:
 ## Change Log
 
 * **v1.0.1** - 2018-06-??
-  - mock integrated tests
-  - test create a duplicate user scenario
-  - write example code - update_users update localized db extensions
+  - finished tests
+  - Made ENV-Vars named the same as variables
 * **v1.0.0** - 2018-06-28
   - example code notes
-  - improve test coverage
+  - improve test coverage (and bug fix)
   - initialize api parameters changed
 * **v0.3.2** - 2018-06-27 - cleanup and generalize
   - write gem docs
@@ -60,38 +61,36 @@ Or install it yourself as:
 
 ## Usage
 
+**To enable API login PowerSchool as an admin** and follow this path: *System>System Settings>Plugin Management Configuration>your plugin>Data_Provider_Configuration* after that is configured you can use the below code:
+
 ```ruby
 require 'ps_utilities'
 
 # INSTANTIATE
 #############
 
-# use parameters
-# ps = PsUtilities::Connection.new(
-#      api_info: {
-#        base_uri: 'https://ps.school.k12/',
-#        auth_endpoint: '/oauth/access_token'},
-#      client_info: {
-#        client_id: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-#        client_secret:  'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'},
-#      header_info: {
-#        'Content-Type' => 'application/json'}
-# )
 
-# Required ENV_Vars - found at:
-# System>System Settings>Plugin Management Configuration>your plugin>Data_Provider_Configuration
+# use parameters to configure powerschool
+ps = PsUtilities::Connection.new(
+     api_info: {
+       base_uri: 'https://sample.powerschool.com/',
+       auth_endpoint: '/oauth/access_token'},
+     client_info: {
+       client_id: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+       client_secret:  'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'},
+)
+
+# BETTER STILL USE ENV VARS
 # ENV['PS_BASE_URI'] = 'https://ps.school.k12/'         # (no default)
 # ENV['PS_AUTH_ENDPOINT'] = '/oauth/access_token'       # (the default)
 # ENV['PS_CLIENT_ID'] = '23qewrdfghjuy675434ertyui'     # (no default)
 # ENV['PS_CLIENT_SECRET'] = '43ertfghjkloi9876trdfrdfg' # (no default)
-# ENV['PS_ACCESS_TOKEN'] = nil                          # (not recommended)
 
 # use ENV Vars and just do:
 ps = PsUtilities::Connection.new
 pp ps
 
-# see connection class connection info
-# run with no params - just authenticates (gets token)
+# AUTHENTICATE against the powerschool api (this should happen automatically, but still good to do initially to avoid delays, etc)
 ps.run(command: :authenticate)
 # or
 ps.run
@@ -142,11 +141,9 @@ kids = ps.run(command: :update_students, params: {students: data })
 # get one kid - check the results of update
 params   = {username: "user237"}
 one      = ps.run(command: :get_one_student, params: params )
-# => {"students"=>
-#   {"@expansions"=>
-#     "demographics, addresses, alerts, phones, school_enrollment, ethnicity_race, contact, contact_info, initial_enrollment, schedule_setup, fees, lunch",
-#    "@extensions"=>
-#     "s_stu_crdc_x,activities,c_studentlocator,u_students_extension,u_studentsuserfields,s_stu_ncea_x,s_stu_edfi_x,studentcorefields",
+# {"students"=>
+#   {"@expansions"=>"demographics, addresses, alerts, phones, school_enrollment, ethnicity_race, contact, contact_info, initial_enrollment, schedule_setup, fees, lunch",
+#    "@extensions"=> "s_stu_crdc_x,activities,c_studentlocator,u_students_extension,u_studentsuserfields,s_stu_ncea_x,s_stu_edfi_x,studentcorefields",
 #    "student"=>
 #     {"id"=>5999,
 #      "local_id"=>103237,
@@ -165,15 +162,15 @@ one      = ps.run(command: :get_one_student, params: params )
 #        "full_time_equivalency"=>{"fteid"=>1070, "name"=>"FTE Value: 1"}}}}}
 
 
-
-# MAKE A SINGLE STUDENT ACCOUNT
+# CREATE A SINGLE STUDENT ACCOUNT
+# required fields are: student_id (chosen by the school), first_name, last_name, entry_date, exit_date, school_number, grade_level - many other fields are optional and available
 data = { student_id: 555807, email: "joey@las.ch",
     u_students_extension: { student_email: "joey@las.ch", preferredname: "Joey"},
     u_studentsuserfields: { transcriptaddrline1: "LAS", transcriptaddrline2: "CP 108",
                             transcriptaddrzip: "1858", transcriptaddrstate: "VD",
                             transcriptaddrcity: "Bex", transcriptaddrcountry: "CH"}
 }
-kids = ps.run(command: :create_student, params: {student: data })
+kids = ps.run(command: :create_student, params: {students: [data] })
 
 # MAKE SEVERAL STUDENT ACCOUNTS
 data = [
@@ -194,13 +191,16 @@ kids = ps.run(command: :create_students, params: {students: data })
 
 
 # UPDATE A SINGLE STUDENT ACCOUNT
+# required fields are: id (dcid) and student_id (local_id - chosen by the school)
+# many other fields are available
+# fields that can't be changed after creation (via api) include: id (dcid is set by the PS system) entry_date, exit_date, school_number, grade_level
 data = { id: 7337, student_id: 555807, email: "joey@las.ch",
     u_students_extension: { student_email: "joey@las.ch", preferredname: "Joey"},
     u_studentsuserfields: { transcriptaddrline1: "LAS", transcriptaddrline2: "CP 108",
                             transcriptaddrzip: "1858", transcriptaddrstate: "VD",
                             transcriptaddrcity: "Bex", transcriptaddrcountry: "CH"}
 }
-kids = ps.run(command: :update_student, params: {student: data })
+kids = ps.run(command: :update_student, params: {students: [data] })
 
 # UPDATE SEVERAL STUDENT ACCOUNTS
 data = [
