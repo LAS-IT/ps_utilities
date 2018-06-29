@@ -25,6 +25,8 @@ Or install it yourself as:
 ## ToDo
 
 - test create a duplicate user scenario
+```
+```
 - write example code - update_users update localized db extensions
 - Student Creation (needed for LAS)
   - add LDAP enabled
@@ -36,7 +38,8 @@ Or install it yourself as:
 ## Change Log
 
 * **v1.0.2** - 2018-??-??
-  -
+  - fixed local_id bug on create student
+  - added data structure checks for badly formatted student data
 * **v1.0.1** - 2018-06-29
   - finished tests
   - added initial enrollment
@@ -191,6 +194,19 @@ data = [
   }
 ]
 kids = ps.run(command: :create_students, params: {students: data })
+
+# if you try to create the same kid twice you get the following error result: 
+{"results"=>
+  {"insert_count"=>0,
+   "update_count"=>0,
+   "delete_count"=>0,
+   "result"=>
+    {"client_uid"=>210987,
+     "status"=>"ERROR",
+     "action"=>"INSERT",
+     "error_message"=>
+      {"error"=>
+        {"field"=>"student/local_id", "error_code"=>"INVALID_LOCAL_ID", "error_description"=>"Local ID already exists in the database and can not be used in an insert."}}}}}
 
 
 # UPDATE A SINGLE STUDENT ACCOUNT

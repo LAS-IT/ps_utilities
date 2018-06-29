@@ -268,4 +268,53 @@ RSpec.describe PsUtilities::PreBuiltPost do
     end
   end
 
+  context "build_kids_api_array - error on bad student data format when not params: {students: {[{kid_data}]} }" do
+    it "detects params: nil" do
+      expect{ ps.send(:build_kids_api_array, "UPDATE", nil ) }.to raise_error( ArgumentError )
+    end
+    it "detects params: 'string'" do
+      expect{ ps.send(:build_kids_api_array, "UPDATE", 'string' ) }.to raise_error( ArgumentError )
+    end
+    it "detects params: 32 (number)" do
+      expect{ ps.send(:build_kids_api_array, "UPDATE", 32 ) }.to raise_error( ArgumentError )
+    end
+    it "detects params: {}" do
+      expect{ ps.send(:build_kids_api_array, "UPDATE", {} ) }.to raise_error( ArgumentError )
+    end
+    it "detects params: {student: {}}" do
+      expect{ ps.send(:build_kids_api_array, "UPDATE", {student: {}} ) }.to raise_error( ArgumentError )
+    end
+    it "detects params: {students: {}}" do
+      expect{ ps.send(:build_kids_api_array, "UPDATE", {students: {}} ) }.to raise_error( ArgumentError )
+    end
+    it "detects params: {students: 'string'}" do
+      expect{ ps.send(:build_kids_api_array, "UPDATE", {students: 'string'} ) }.to raise_error( ArgumentError )
+    end
+    it "detects params: {students: 32}" do
+      expect{ ps.send(:build_kids_api_array, "UPDATE", {students: 32} ) }.to raise_error( ArgumentError )
+    end
+    it "detects params: {students: {[]}} - not empty" do
+      expect{ ps.send(:build_kids_api_array, "UPDATE", {students: []} ) }.to raise_error( ArgumentError )
+    end
+    it "detects params: {students: {[{}]}} - not empty" do
+      expect{ ps.send(:build_kids_api_array, "UPDATE", {students: [{}]} ) }.to raise_error( ArgumentError )
+    end
+    it "detects params: {students: {['string']}}" do
+      expect{ ps.send(:build_kids_api_array, "UPDATE", {students: ['string']} ) }.to raise_error( ArgumentError )
+    end
+    it "detects params: {students: {[32]}}" do
+      expect{ ps.send(:build_kids_api_array, "UPDATE", {students: [32]} ) }.to raise_error( ArgumentError )
+    end
+    it "ok when params: {students: {[{id:32}]}} - no error" do
+      answer  = ps.send(:build_kids_api_array, "UPDATE", {students: [{id: 32}]} )
+      correct = [{:action=>"UPDATE", :id=>32}]
+      expect( answer ).to eq( correct )
+    end
+    it "ok when params: {students: {[{id: 32},{id: 33}]}} - no error" do
+      answer  = ps.send(:build_kids_api_array, "UPDATE", {students: [{id: 32},{id: 33}]} )
+      correct = [{:action=>"UPDATE", :id=>32},{:action=>"UPDATE", :id=>33}]
+      expect( answer ).to eq( correct )
+    end
+  end
+
 end

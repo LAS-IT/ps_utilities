@@ -72,6 +72,8 @@ module PsUtilities
       else
         send(command, params)
       end
+      rescue ArgumentError => error
+        return {"error_message" => error.message}
     end
 
     private

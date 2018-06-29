@@ -51,6 +51,8 @@ module PsUtilities
     def update_students(params)
       action = "UPDATE"
       kids_api_array = build_kids_api_array(action, params)
+      return kids_api_array     if kids_api_array.empty?
+
       options  = { body: { students: { student: kids_api_array } }.to_json }
       answer = api(:post, "/ws/v1/student", options)
       return answer.parsed_response   if answer.code.to_s.eql? "200"
@@ -93,18 +95,20 @@ module PsUtilities
     #]
     # @note this is then sent to the API call with a body tag
     def build_kids_api_array(action, params)
-      students  = []
-      api_array = []
-      # students  = [params[:student]] if not params[:student].nil?  && params[:student].is_a?(Hash)
-      students  =  params[:students] #if not params[:students].nil? && params[:students].is_a?(Array)
-      if students.empty?
-        return {"errorMessage"=>{"message"=>"Bad student data - USE: {students: [{kid_data1}, {kid_data2}]}"}}
+      # ugly protection against bad data feeds - but it works
+      # TODO: refactor with an elegant assertion?
+      if params.nil? or not params.is_a?(Hash) or params[:students].nil? or not params[:students].is_a?(Array) or params[:students].empty? or not params[:students][0].is_a?(Hash)
+        raise ArgumentError, "PARAMS format is: {students: [{kid_data1}, {kid_data2}]} - NOT OK: #{params}"
       end
+      if action.nil? or not action.is_a?(String) or action.empty? or not %[INSERT UPDATE].include?(action)
+        raise ArgumentError, "ACTION must be: 'INSERT' or 'UPDATE' - NOT OK: #{action}"
+      end
+      api_array = []
+      students  =  params.dig(:students)
       students.each do |kid|
-        # kid[:las_extensions] = true if params[:las_extensions]
         api_array << build_kid_attributes(action, kid)
       end
-      return api_array
+      api_array
     end
 
     # prepare data to update student database extensions
@@ -180,6 +184,12 @@ module PsUtilities
     #     ]
     #   }
     def build_kid_attributes(action, kid)
+      if kid.nil? or not kid.is_a?(Hash) or kid.empty?
+        raise ArgumentError, "STUDENT format is: {students: [{kid_data1}, {kid_data2}]} - NOT OK: #{kid}"
+      end
+      if action.nil? or not action.is_a?(String) or action.empty? or not %[INSERT UPDATE].include?(action)
+        raise ArgumentError, "ACTION must be: 'INSERT' or 'UPDATE' - NOT OK: #{action}"
+      end
       # ALWAYS NEEDED INFO
       attribs                        = {action: action}
       attribs[:client_uid]           = kid[:student_id].to_s
@@ -190,7 +200,8 @@ module PsUtilities
       case action
       when 'INSERT'
         # must be set on creation (INSERT)
-        attribs[:local_id]  = kid[:oa_id].to_i
+        attribs[:local_id]           = kid[:local_id].to_i   if kid[:local_id]
+        attribs[:local_id]           = kid[:student_id].to_i if kid[:student_id]
         # to create an account both first and last name must be present
         attribs[:name][:last_name]   = kid[:last_name]   if kid[:last_name] or kid[:first_name]
         attribs[:name][:first_name]  = kid[:first_name]  if kid[:last_name] or kid[:first_name]
