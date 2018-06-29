@@ -24,20 +24,16 @@ Or install it yourself as:
 
 ## ToDo
 
-- test create a duplicate user scenario
-```
-```
 - write example code - update_users update localized db extensions
+- refactor student data errors with elegant assertions
 - Student Creation (needed for LAS)
   - add LDAP enabled
   - add parent web_id
   - add parent web_password
-- add user_exists? - test create a duplicate user scenario
-- add polite errors for bad data structures, when creating or updating students, ie fail nicely when: {students: {students: [{}]}} should be **params: {students: [{}]}**
 
 ## Change Log
 
-* **v1.0.2** - 2018-??-??
+* **v1.0.2** - 2018-06-29
   - fixed local_id bug on create student
   - added data structure checks for badly formatted student data
 * **v1.0.1** - 2018-06-29
@@ -195,7 +191,7 @@ data = [
 ]
 kids = ps.run(command: :create_students, params: {students: data })
 
-# if you try to create the same kid twice you get the following error result: 
+# if you try to create the same kid twice you get the following error result:
 {"results"=>
   {"insert_count"=>0,
    "update_count"=>0,
