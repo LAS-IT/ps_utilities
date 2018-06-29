@@ -1,10 +1,14 @@
 # PsUtilities
 
-Ruby wrapper for Powerschool API interaction - without using rails dependencies.
+Ruby wrapper for PowerSchool API interaction (& the OAuth2 authentication).
 
-This uses oauth2 to connection to the Powerschool API.
+This code has good test coverage and we have put efforts to make its usage well documented & simply - espescially for common events, such a searching all students, creating and / or updating students profiles and retriving an individual's PS record.
 
-This code is heavily refactored code from: https://github.com/TomK32/powerschool
+The only external library in use in this code base is HTTParty - therefore, this code works with or without rails.  We at LAS use this code to sync hourly between OpenApply (using https://github.com/LAS-IT/openapply) and PowerSchool.
+
+*A lot of effort has gone into discovering and documenting the PS API & collecting the scattered information - in order to effectively use the API (& extend this code base as necessary).*  Hopefully, the API documentation summary and examples will help others understand and use the PS API.
+
+The original start for this code is from: https://github.com/TomK32/powerschool (although now very heavily refactored).
 
 ## Installation
 
