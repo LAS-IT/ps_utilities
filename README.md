@@ -31,12 +31,15 @@ Or install it yourself as:
   - add parent web_id
   - add parent web_password
 - add user_exists? - test create a duplicate user scenario
-- add tests for bad data structures, ie when {studdents: {students: [{}]}}
+- add polite errors for bad data structures, when creating or updating students, ie fail nicely when: {students: {students: [{}]}} should be **params: {students: [{}]}**
 
 ## Change Log
 
-* **v1.0.1** - 2018-06-??
+* **v1.0.2** - 2018-??-??
+  -
+* **v1.0.1** - 2018-06-29
   - finished tests
+  - added initial enrollment
   - Made ENV-Vars named the same as variables
 * **v1.0.0** - 2018-06-28
   - example code notes
