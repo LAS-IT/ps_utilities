@@ -100,16 +100,12 @@ ps.run
 # list of active students
 kids     = ps.run( command: :get_all_active_students )
 pp kids
-# {"students"=>
-#   {"@expansions"=> "demographics, addresses, alerts, phones, school_enrollment, ethnicity_race, contact, contact_info, initial_enrollment, schedule_setup, fees, lunch",
-#    "@extensions"=> "s_stu_crdc_x,activities,c_studentlocator,u_students_extension,u_studentsuserfields,s_stu_ncea_x,s_stu_edfi_x,studentcorefields",
-#    "student"=>
-#     [
-#       {"id"=>4916, "local_id"=>112406, "student_username"=>"xxxx406", "name"=>{"first_name"=>"Xxxxxx", "last_name"=>"xxxxx"}},
-#       {"id"=>5037, "local_id"=>112380, "student_username"=>"yyyyy380", "name"=>{"first_name"=>"Yyyyyy", "last_name"=>"YYYYY"}},
-#       .....
-#     ]
-#   }
+# {:students:
+#   [
+#     {"id"=>4916, "local_id"=>112406, "student_username"=>"xxxx406", "name"=>{"first_name"=>"Xxxxxx", "last_name"=>"xxxxx"}},
+#     {"id"=>5037, "local_id"=>112380, "student_username"=>"yyyyy380", "name"=>{"first_name"=>"Yyyyyy", "last_name"=>"YYYYY"}},
+#     .....
+#   ]
 # }
 
 # get all active students with last_name starting with B
@@ -140,9 +136,9 @@ kids = ps.run(command: :update_students, params: {students: data })
 #   }
 # }
 
-# get one kid - check the results of update
-params   = {username: "user237"}
-one      = ps.run(command: :get_one_student, params: params )
+# get one kid - check the results of update - MUST use the ID (dcid)
+params   = {id: 5999}
+one      = ps.run(command: :get_one_student, params: {id: 5999} )
 # {"students"=>
 #   {"@expansions"=>"demographics, addresses, alerts, phones, school_enrollment, ethnicity_race, contact, contact_info, initial_enrollment, schedule_setup, fees, lunch",
 #    "@extensions"=> "s_stu_crdc_x,activities,c_studentlocator,u_students_extension,u_studentsuserfields,s_stu_ncea_x,s_stu_edfi_x,studentcorefields",
