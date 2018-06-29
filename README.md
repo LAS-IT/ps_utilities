@@ -80,7 +80,7 @@ require 'ps_utilities'
 
 # Required ENV_Vars - found at:
 # System>System Settings>Plugin Management Configuration>your plugin>Data_Provider_Configuration
-# ENV['PS_BASE_URL'] = 'https://ps.school.k12/'         # (no default)
+# ENV['PS_BASE_URI'] = 'https://ps.school.k12/'         # (no default)
 # ENV['PS_AUTH_ENDPOINT'] = '/oauth/access_token'       # (the default)
 # ENV['PS_CLIENT_ID'] = '23qewrdfghjuy675434ertyui'     # (no default)
 # ENV['PS_CLIENT_SECRET'] = '43ertfghjkloi9876trdfrdfg' # (no default)

@@ -11,15 +11,15 @@ RSpec.describe PsUtilities::Connection do
 
   context "server configures with ENV-VARS" do
     it "Instantiates with minimal ENV-VARS" do
-      stub_const('ENV', ENV.to_hash.merge('PS_BASE_URL' => 'ps_url'))
+      stub_const('ENV', ENV.to_hash.merge('PS_BASE_URI' => 'ps_url'))
       stub_const('ENV', ENV.to_hash.merge('PS_CLIENT_ID' => 'client_id'))
       stub_const('ENV', ENV.to_hash.merge('PS_CLIENT_SECRET' => 'client_secret'))
       expect { PsUtilities::Connection.new }.not_to raise_error()
     end
     it "base_uri" do
-      stub_const('ENV', ENV.to_hash.merge('PS_BASE_URL' => 'ps_url'))
+      stub_const('ENV', ENV.to_hash.merge('PS_BASE_URI' => 'ps_url'))
       ps = PsUtilities::Connection.new
-      expect(ps.api_data[:base_uri]).to eq(ENV['PS_BASE_URL'])
+      expect(ps.api_data[:base_uri]).to eq(ENV['PS_BASE_URI'])
     end
     it "auth_endpoint" do
       stub_const('ENV', ENV.to_hash.merge('PS_AUTH_ENDPOINT' => 'auth_endpoint'))
@@ -40,7 +40,7 @@ RSpec.describe PsUtilities::Connection do
 
   context "server parameters override ENV-VARS" do
     it "base_uri" do
-      stub_const('ENV', ENV.to_hash.merge('PS_BASE_URL' => 'ps_url'))
+      stub_const('ENV', ENV.to_hash.merge('PS_BASE_URI' => 'ps_url'))
       ps = PsUtilities::Connection.new(api_info: {base_uri: 'params_host'})
       expect(ps.api_data[:base_uri]).to eq('params_host')
     end
@@ -69,7 +69,7 @@ RSpec.describe PsUtilities::Connection do
 
   context "server parameters are not correct" do
     it "errors when ps_url is missing" do
-      stub_const('ENV', ENV.to_hash.merge('PS_BASE_URL' => nil))
+      stub_const('ENV', ENV.to_hash.merge('PS_BASE_URI' => nil))
       expect { PsUtilities::Connection.new }.to raise_error(ArgumentError, /missing base_uri/)
     end
     it "errors when client_id is missing" do

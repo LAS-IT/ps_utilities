@@ -33,10 +33,11 @@ module PsUtilities
     include PsUtilities::PreBuiltPut
     include PsUtilities::PreBuiltPost
 
-    # @param attributes: [Hash] -  options include: { base_uri: ENV['PS_BASE_URL'], auth_endpoint: (ENV['PS_AUTH_ENDPOINT'] || '/oauth/access_token'), client_id: ENV['PS_CLIENT_ID'], client_secret: ENV['PS_CLIENT_SECRET'] }
-    # @param headers: [Hash] - allows to change from json to xml (only do this if you are doing direct api calls and not using pre-built calls) returns and use a different useragent: { 'User-Agent' => "PsUtilities - #{version}", 'Accept' => 'application/json', 'Content-Type' => 'application/json'}
+    # @param api_info: [Hash] -  allows override of api settings :base_uri (overrides ENV['PS_BASE_URI']) and :auth_path (overrides ENV['PS_ATUH_ENDPOINT'])
+    # @param client_info: [Hash] - allows override of client login values :client_id (overrides ENV['PS_CLIENT_ID']) & :client_secret (overrides ENV['PS_CLIENT_SECRET'])
     # @note preference is to use environment variables to initialize your server.
-    def initialize( header_info: {}, api_info: {}, client_info: {})
+    # def initialize( header_info: {}, api_info: {}, client_info: {})
+    def initialize( api_info: {}, client_info: {})
       @version       = "v#{PsUtilities::Version::VERSION}"
       @client        = client_defaults.merge(client_info)
       @client_id     = client[:client_id]
@@ -44,7 +45,8 @@ module PsUtilities
       @api_data      = api_defaults.merge(api_info)
       @base_uri      = api_data[:base_uri]
       @auth_path     = api_data[:auth_endpoint]
-      @headers       = header_defaults.merge(header_info)
+      @headers       = header_defaults  # Auth key is added when authenticate is executed
+      # @headers['Authorization'] = header_info['Authorization'] if header_info['Authorization']
 
       raise ArgumentError, "missing client_secret" if client_secret.nil? or client_secret.empty?
       raise ArgumentError, "missing client_id"     if client_id.nil? or client_id.empty?
@@ -78,8 +80,10 @@ module PsUtilities
       "#{auth_info['access_token']}"
     end
 
-    # verb = :delete, :get, :patch, :post, :put
-    # options = {query: {}, body: {}} - get uses :query, put and post use :body
+    # Direct API access
+    # @param verb [Symbol] hmtl verbs (:delete, :get, :patch, :post, :put)
+    # @param options [Hash] allowed keys are {query: {}, body: {}} - uses :query for gets, and use :body for put and post
+    # @return [HTTParty] - useful things to access include: obj.parsed_response (to access returned data) & obj.code to be sure the response was successful "200"
     def api(verb, api_path, options={})
       count   = 0
       retries = 3
@@ -97,6 +101,8 @@ module PsUtilities
       end
     end
 
+    # by this code sends and recieves json data - only overide if building your own data and sending directly via the API methods :get, :put, :post, etc.
+    # @note do not override these Settings - if using the pre-build commands
     def header_defaults
       { headers:
         { 'User-Agent' => "PsUtilities - #{version}",
@@ -106,11 +112,18 @@ module PsUtilities
       }
     end
 
-    # In PowerSchool go to System>System Settings>Plugin Management Configuration>your plugin>Data Provider Configuration to manually check plugin expiration date
+    # gets API auth token and puts in header HASH for future requests with PS server
+    # @return [Hash] - of auth token and time to live from powerschol server
+    # {'access_token' => "addsfabe-aads-4444-bbbb-444411ffffbb",
+    #  'token_type' => "Bearer",
+    #  'expires_in' => "2504956"
+    #  'token_expires' => (Time.now + 3600)}
+    # @note - to enable PS API - In PowerSchool go to System>System Settings>Plugin Management Configuration>your plugin>Data Provider Configuration to manually check plugin expiration date
     def authenticate
       ps_url   = base_uri + auth_path
-      response = HTTParty.post(ps_url, {headers: auth_headers,
-                                        body: 'grant_type=client_credentials'})
+      response = HTTParty.post( ps_url,
+                                { headers: auth_headers,
+                                  body: 'grant_type=client_credentials'} )
       if response.code.to_s.eql? "200"
         @auth_info = response.parsed_response
         @auth_info['token_expires'] = Time.now + response.parsed_response['expires_in'].to_i
@@ -142,8 +155,8 @@ module PsUtilities
 
     def encode64_client(credentials = client)
       ps_auth_text = [ credentials[:client_id], credentials[:client_secret] ].join(':')
-      Base64.encode64(ps_auth_text).chomp
-      # Base64.encode64(ps_auth_text).gsub(/\n/, '')
+      Base64.encode64(ps_auth_text).gsub(/\n/, '')
+      # Base64.encode64(ps_auth_text).chomp
     end
 
     def client_defaults
@@ -153,7 +166,7 @@ module PsUtilities
     end
 
     def api_defaults
-      { base_uri:       ENV['PS_BASE_URL'],
+      { base_uri:       ENV['PS_BASE_URI'],
         auth_endpoint:  ENV['PS_AUTH_ENDPOINT'] || '/oauth/access_token',
       }
     end

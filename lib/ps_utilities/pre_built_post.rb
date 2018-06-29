@@ -3,11 +3,12 @@ module PsUtilities
   module PreBuiltPost
 
     # this method CREATES or INSERTS a new student into PowerSchool
-    # @param params (Array of Hashes) - kids with their attributes
-    # example student entry
-    # @param params: { student: {dcid: 7531, student_id: 23456, email: "kid@las.ch"} }
+    # @param params (Array of Hashes) - kids with their attributes use format:
+    # one kid
+    # params: { students: [{dcid: 7531, student_id: 23456, email: "kid1@las.ch"}] }
+    #
     # or multiple students (with ps and your school's database extensions)
-    # @param params: { students:
+    # params: { students:
     #   [ { dcid: 9753, student_id: 65432 },
     #     { dcid: 7531, student_id: 23456, email: "kid@las.ch",
     #       u_studentsuserfields: {transcriptaddrcity: "Bex"},
