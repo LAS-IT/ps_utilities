@@ -11,6 +11,8 @@
 
 ## Changes
 
+* **v1.0.3** - 2020-03-05
+  - update dependencies
 * **v1.0.2** - 2018-06-29
   - fixed local_id bug on create student
   - added data structure checks for badly formatted student data
