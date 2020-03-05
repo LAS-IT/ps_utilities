@@ -31,10 +31,10 @@ Gem::Specification.new do |spec|
   # spec.require_paths = ["lib"]
   spec.files = Dir['lib/**/*.rb']
 
-  spec.add_dependency "httparty", '~> 0.16'
+  spec.add_dependency "httparty", '~> 0.18'
 
   spec.add_development_dependency "bundler", "~> 2.1"
-  spec.add_development_dependency "rake", "~> 10.5"
-  spec.add_development_dependency "rspec", "~> 3.7"
-  spec.add_development_dependency "webmock", "~> 3.4"
+  spec.add_development_dependency "rake", "~> 13.0"
+  spec.add_development_dependency "rspec", "~> 3.9"
+  spec.add_development_dependency "webmock", "~> 3.8"
 end
