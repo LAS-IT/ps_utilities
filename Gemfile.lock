@@ -41,11 +41,11 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  bundler (~> 1.16)
+  bundler (~> 2.1)
   ps_utilities!
   rake (~> 10.5)
   rspec (~> 3.7)
   webmock (~> 3.4)
 
 BUNDLED WITH
-   1.16.2
+   2.1.2
