@@ -98,7 +98,7 @@ module PsUtilities
           count += 1
           retry
         else
-          { error: "no response (timeout) from URL: #{url}"  }
+          { error: "no response (timeout) from URL: #{ps_url}"  }
         end
       end
     end
