@@ -148,7 +148,7 @@ module PsUtilities
     end
 
     def auth_headers(credentials = client)
-      { 'ContentType' => 'application/x-www-form-urlencoded;charset=UTF-8',
+      { 'Content-Type' => 'application/x-www-form-urlencoded;charset=UTF-8',
         'Accept' => 'application/json',
         'Authorization' => 'Basic ' + encode64_client(credentials)
       }
