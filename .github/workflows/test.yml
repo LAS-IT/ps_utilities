@@ -1,0 +1,24 @@
+name: "Test"
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Check out code"
+        uses: actions/checkout@v5
+      - name: "Set up Ruby"
+        uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+      - name: "Run tests"
+        env:
+          PS_CLIENT_ID: some_id
+          PS_CLIENT_SECRET: some_secret
+          PS_BASE_URI: https://ps.example.com
+        run: |
+          bundle exec rake
