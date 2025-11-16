@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    ps_utilities (1.0.2)
+    ps_utilities (1.0.4)
       httparty (~> 0.18)
 
 GEM
@@ -45,11 +45,11 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  bundler (~> 2.1)
+  bundler (>= 2.5)
   ps_utilities!
   rake (~> 13.0)
   rspec (~> 3.9)
   webmock (~> 3.8)
 
 BUNDLED WITH
-   2.1.2
+   2.5.23
