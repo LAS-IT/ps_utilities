@@ -2,6 +2,14 @@ require "spec_helper"
 
 RSpec.describe PsUtilities::PreBuiltPost do
 
+  before do
+    stub_const('ENV', ENV.to_hash.merge(
+      'PS_BASE_URI' => 'http://test.example.com',
+      'PS_CLIENT_ID' => 'test_client_id',
+      'PS_CLIENT_SECRET' => 'test_client_secret'
+    ))
+  end
+
   let!(:ps)       { PsUtilities::Connection.new }
   let(:base_path) { "#{ENV['PS_BASE_URI']}"}
   # let(:auth_token){ "1234567890" }
