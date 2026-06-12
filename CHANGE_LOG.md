@@ -11,6 +11,12 @@
 
 ## Changes
 
+* **v1.0.5** - 2025-11-15
+  - update vulnerable gems
+    - **addressable** (2.8.7) - CVE: CVE-2026-35611; Solution: update to '>= 2.9.0'
+    - **httparty** (0.18.0) - CVE: CVE-2024-22049, CVE-2025-68696; Solution: update to '>= 0.24.0'
+  - changed webmock stubs to work without .env file
+
 * **v1.0.4** - 2025-11-15
   - fixed auth header Content-Type
 
